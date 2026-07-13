@@ -50,17 +50,9 @@ public class Product {
     @Column(name = "low_stock_threshold")
     private Integer lowStockThreshold = 5;
 
-    // FIXED: Removed scale from Double fields
-    @Column(name = "weight", precision = 10)
     private Double weight;
-
-    @Column(name = "length", precision = 10)
     private Double length;
-
-    @Column(name = "width", precision = 10)
     private Double width;
-
-    @Column(name = "height", precision = 10)
     private Double height;
 
     @Column(name = "is_active")
@@ -100,8 +92,9 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductImage> images = new ArrayList<>();
+    // ❌ REMOVED: ProductImage relationship (now handled by ImageService)
+    // @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private List<ProductImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductSpecification> specifications = new ArrayList<>();
@@ -130,283 +123,107 @@ public class Product {
         this.sku = sku;
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    // Getters and Setters (ALL)
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getShortDescription() { return shortDescription; }
+    public void setShortDescription(String shortDescription) { this.shortDescription = shortDescription; }
 
-    public String getDescription() {
-        return description;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public BigDecimal getCostPrice() { return costPrice; }
+    public void setCostPrice(BigDecimal costPrice) { this.costPrice = costPrice; }
 
-    public String getShortDescription() {
-        return shortDescription;
-    }
+    public BigDecimal getCompareAtPrice() { return compareAtPrice; }
+    public void setCompareAtPrice(BigDecimal compareAtPrice) { this.compareAtPrice = compareAtPrice; }
 
-    public void setShortDescription(String shortDescription) {
-        this.shortDescription = shortDescription;
-    }
+    public String getSku() { return sku; }
+    public void setSku(String sku) { this.sku = sku; }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public BigDecimal getCostPrice() {
-        return costPrice;
-    }
-
-    public void setCostPrice(BigDecimal costPrice) {
-        this.costPrice = costPrice;
-    }
-
-    public BigDecimal getCompareAtPrice() {
-        return compareAtPrice;
-    }
-
-    public void setCompareAtPrice(BigDecimal compareAtPrice) {
-        this.compareAtPrice = compareAtPrice;
-    }
-
-    public String getSku() {
-        return sku;
-    }
-
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
-
-    public String getBarcode() {
-        return barcode;
-    }
-
-    public void setBarcode(String barcode) {
-        this.barcode = barcode;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
+    public Integer getStockQuantity() { return stockQuantity; }
     public void setStockQuantity(Integer stockQuantity) {
         this.stockQuantity = stockQuantity;
         this.inStock = stockQuantity > 0;
     }
 
-    public Integer getLowStockThreshold() {
-        return lowStockThreshold;
-    }
+    public Integer getLowStockThreshold() { return lowStockThreshold; }
+    public void setLowStockThreshold(Integer lowStockThreshold) { this.lowStockThreshold = lowStockThreshold; }
 
-    public void setLowStockThreshold(Integer lowStockThreshold) {
-        this.lowStockThreshold = lowStockThreshold;
-    }
+    public Double getWeight() { return weight; }
+    public void setWeight(Double weight) { this.weight = weight; }
 
-    public Double getWeight() {
-        return weight;
-    }
+    public Double getLength() { return length; }
+    public void setLength(Double length) { this.length = length; }
 
-    public void setWeight(Double weight) {
-        this.weight = weight;
-    }
+    public Double getWidth() { return width; }
+    public void setWidth(Double width) { this.width = width; }
 
-    public Double getLength() {
-        return length;
-    }
+    public Double getHeight() { return height; }
+    public void setHeight(Double height) { this.height = height; }
 
-    public void setLength(Double length) {
-        this.length = length;
-    }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
-    public Double getWidth() {
-        return width;
-    }
+    public boolean isFeatured() { return featured; }
+    public void setFeatured(boolean featured) { this.featured = featured; }
 
-    public void setWidth(Double width) {
-        this.width = width;
-    }
+    public boolean isInStock() { return inStock; }
+    public void setInStock(boolean inStock) { this.inStock = inStock; }
 
-    public Double getHeight() {
-        return height;
-    }
+    public boolean isDigital() { return digital; }
+    public void setDigital(boolean digital) { this.digital = digital; }
 
-    public void setHeight(Double height) {
-        this.height = height;
-    }
+    public Double getAverageRating() { return averageRating; }
+    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
 
-    public boolean isActive() {
-        return active;
-    }
+    public Integer getTotalReviews() { return totalReviews; }
+    public void setTotalReviews(Integer totalReviews) { this.totalReviews = totalReviews; }
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+    public Integer getViewCount() { return viewCount; }
+    public void setViewCount(Integer viewCount) { this.viewCount = viewCount; }
 
-    public boolean isFeatured() {
-        return featured;
-    }
+    public Integer getSoldCount() { return soldCount; }
+    public void setSoldCount(Integer soldCount) { this.soldCount = soldCount; }
 
-    public void setFeatured(boolean featured) {
-        this.featured = featured;
-    }
+    public String getMetaTitle() { return metaTitle; }
+    public void setMetaTitle(String metaTitle) { this.metaTitle = metaTitle; }
 
-    public boolean isInStock() {
-        return inStock;
-    }
+    public String getMetaDescription() { return metaDescription; }
+    public void setMetaDescription(String metaDescription) { this.metaDescription = metaDescription; }
 
-    public void setInStock(boolean inStock) {
-        this.inStock = inStock;
-    }
+    public String getMetaKeywords() { return metaKeywords; }
+    public void setMetaKeywords(String metaKeywords) { this.metaKeywords = metaKeywords; }
 
-    public boolean isDigital() {
-        return digital;
-    }
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
 
-    public void setDigital(boolean digital) {
-        this.digital = digital;
-    }
+    public List<ProductSpecification> getSpecifications() { return specifications; }
+    public void setSpecifications(List<ProductSpecification> specifications) { this.specifications = specifications; }
 
-    public Double getAverageRating() {
-        return averageRating;
-    }
+    public List<Review> getReviews() { return reviews; }
+    public void setReviews(List<Review> reviews) { this.reviews = reviews; }
 
-    public void setAverageRating(Double averageRating) {
-        this.averageRating = averageRating;
-    }
+    public List<ProductVariant> getVariants() { return variants; }
+    public void setVariants(List<ProductVariant> variants) { this.variants = variants; }
 
-    public Integer getTotalReviews() {
-        return totalReviews;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setTotalReviews(Integer totalReviews) {
-        this.totalReviews = totalReviews;
-    }
-
-    public Integer getViewCount() {
-        return viewCount;
-    }
-
-    public void setViewCount(Integer viewCount) {
-        this.viewCount = viewCount;
-    }
-
-    public Integer getSoldCount() {
-        return soldCount;
-    }
-
-    public void setSoldCount(Integer soldCount) {
-        this.soldCount = soldCount;
-    }
-
-    public String getMetaTitle() {
-        return metaTitle;
-    }
-
-    public void setMetaTitle(String metaTitle) {
-        this.metaTitle = metaTitle;
-    }
-
-    public String getMetaDescription() {
-        return metaDescription;
-    }
-
-    public void setMetaDescription(String metaDescription) {
-        this.metaDescription = metaDescription;
-    }
-
-    public String getMetaKeywords() {
-        return metaKeywords;
-    }
-
-    public void setMetaKeywords(String metaKeywords) {
-        this.metaKeywords = metaKeywords;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public List<ProductImage> getImages() {
-        return images;
-    }
-
-    public void setImages(List<ProductImage> images) {
-        this.images = images;
-    }
-
-    public List<ProductSpecification> getSpecifications() {
-        return specifications;
-    }
-
-    public void setSpecifications(List<ProductSpecification> specifications) {
-        this.specifications = specifications;
-    }
-
-    public List<Review> getReviews() {
-        return reviews;
-    }
-
-    public void setReviews(List<Review> reviews) {
-        this.reviews = reviews;
-    }
-
-    public List<ProductVariant> getVariants() {
-        return variants;
-    }
-
-    public void setVariants(List<ProductVariant> variants) {
-        this.variants = variants;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     // Helper methods
-    public void addImage(ProductImage image) {
-        this.images.add(image);
-        image.setProduct(this);
-    }
-
-    public void removeImage(ProductImage image) {
-        this.images.remove(image);
-        image.setProduct(null);
-    }
-
     public void addSpecification(ProductSpecification specification) {
         this.specifications.add(specification);
         specification.setProduct(this);

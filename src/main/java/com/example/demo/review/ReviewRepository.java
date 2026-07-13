@@ -1,7 +1,5 @@
 package com.example.demo.review;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,90 +13,48 @@ import java.util.Optional;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    // Find by product
+    // Get approved reviews for a product (sorted newest first)
+    List<Review> findByProductIdAndApprovedTrueOrderByCreatedAtDesc(Long productId);
+
+    // Get all reviews for a product (including pending)
     List<Review> findByProductId(Long productId);
-    
-    Page<Review> findByProductId(Long productId, Pageable pageable);
-    
-    List<Review> findByProductIdAndApprovedTrue(Long productId);
-    
-    Page<Review> findByProductIdAndApprovedTrue(Long productId, Pageable pageable);
-    
-    // Find by user
+
+    // Get all reviews by a user
     List<Review> findByUserId(Long userId);
-    
-    Page<Review> findByUserId(Long userId, Pageable pageable);
-    
-    List<Review> findByUserIdAndApprovedTrue(Long userId);
-    
-    // Find by rating
-    List<Review> findByProductIdAndRating(Long productId, Integer rating);
-    
-    Page<Review> findByProductIdAndRating(Long productId, Integer rating, Pageable pageable);
-    
-    @Query("SELECT r FROM Review r WHERE r.product.id = :productId AND r.rating >= :minRating AND r.approved = true")
-    List<Review> findByProductIdAndMinRating(@Param("productId") Long productId, @Param("minRating") Integer minRating);
-    
-    // Find approved reviews
-    Page<Review> findByApprovedTrue(Pageable pageable);
-    
-    List<Review> findByApprovedTrueAndFeaturedTrue();
-    
-    // Find pending reviews (not approved)
-    Page<Review> findByApprovedFalse(Pageable pageable);
-    
-    // Find verified purchases
-    List<Review> findByProductIdAndVerifiedPurchaseTrue(Long productId);
-    
-    // Check if user has reviewed product
-    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Review r WHERE r.user.id = :userId AND r.product.id = :productId AND r.deletedAt IS NULL")
-    boolean existsByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
-    
+
+    // Check if user already reviewed this product
+    boolean existsByUserIdAndProductId(Long userId, Long productId);
+
     // Get review by user and product
-    @Query("SELECT r FROM Review r WHERE r.user.id = :userId AND r.product.id = :productId AND r.deletedAt IS NULL")
-    Optional<Review> findByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
-    
-    // Get average rating for product
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.product.id = :productId AND r.approved = true AND r.deletedAt IS NULL")
+    Optional<Review> findByUserIdAndProductId(Long userId, Long productId);
+
+    // Get average rating for a product (only approved reviews)
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.product.id = :productId AND r.approved = true")
     Double getAverageRatingByProductId(@Param("productId") Long productId);
-    
-    // Get total reviews count for product
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.approved = true AND r.deletedAt IS NULL")
-    Long getTotalReviewsByProductId(@Param("productId") Long productId);
-    
-    // Get rating distribution for product
-    @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.approved = true AND r.deletedAt IS NULL GROUP BY r.rating ORDER BY r.rating")
-    List<Object[]> getRatingDistribution(@Param("productId") Long productId);
-    
-    // Get recent reviews for product
-    @Query("SELECT r FROM Review r WHERE r.product.id = :productId AND r.approved = true AND r.deletedAt IS NULL ORDER BY r.createdAt DESC")
-    List<Review> findRecentReviewsByProductId(@Param("productId") Long productId, Pageable pageable);
-    
-    // Search reviews by keyword in comment
-    @Query("SELECT r FROM Review r WHERE r.product.id = :productId AND LOWER(r.comment) LIKE LOWER(CONCAT('%', :keyword, '%')) AND r.approved = true AND r.deletedAt IS NULL")
-    List<Review> searchReviewsByProductId(@Param("productId") Long productId, @Param("keyword") String keyword);
-    
+
+    // Count total reviews for a product (only approved)
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.approved = true")
+    Long countByProductId(@Param("productId") Long productId);
+
+    // Get all pending reviews (not approved)
+    @Query("SELECT r FROM Review r WHERE r.approved = false ORDER BY r.createdAt ASC")
+    List<Review> findPendingReviews();
+
     // Update approval status
     @Modifying
     @Transactional
     @Query("UPDATE Review r SET r.approved = :approved WHERE r.id = :id")
     void updateApprovalStatus(@Param("id") Long id, @Param("approved") boolean approved);
-    
-    // Soft delete review
+
+    // Delete all reviews for a product (useful for product deletion)
     @Modifying
     @Transactional
-    @Query("UPDATE Review r SET r.deletedAt = CURRENT_TIMESTAMP WHERE r.id = :id")
-    void softDelete(@Param("id") Long id);
-    
-    // Get reviews with images
-    @Query("SELECT DISTINCT r FROM Review r LEFT JOIN FETCH r.images WHERE r.product.id = :productId AND r.approved = true AND r.deletedAt IS NULL")
-    List<Review> findReviewsWithImagesByProductId(@Param("productId") Long productId);
-    
-    // Count reviews by rating for a product
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.product.id = :productId AND r.rating = :rating AND r.approved = true AND r.deletedAt IS NULL")
-    Long countByProductIdAndRating(@Param("productId") Long productId, @Param("rating") Integer rating);
-    
-    // Get reviews with highest helpful votes
-    @Query("SELECT r FROM Review r WHERE r.product.id = :productId AND r.approved = true AND r.deletedAt IS NULL ORDER BY r.helpfulCount DESC")
-    List<Review> findMostHelpfulReviews(@Param("productId") Long productId, Pageable pageable);
+    @Query("DELETE FROM Review r WHERE r.product.id = :productId")
+    void deleteByProductId(@Param("productId") Long productId);
+
+    // Delete all reviews by a user (useful for user deletion)
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Review r WHERE r.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }

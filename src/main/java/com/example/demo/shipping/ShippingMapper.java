@@ -1,8 +1,9 @@
 package com.example.demo.shipping;
 
-import org.springframework.stereotype.Component;
-
 import com.example.demo.order.Order;
+import com.example.demo.shipping.dtos.ShippingBatchResponse;
+
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class ShippingMapper {
         response.setCreatedAt(batch.getCreatedAt());
         response.setDispatchedAt(batch.getDispatchedAt());
         response.setDeliveredAt(batch.getDeliveredAt());
+        response.setAutoDeliverAt(batch.getAutoDeliverAt());
 
         if (batch.getShippingBatchOrders() != null) {
             List<ShippingBatchResponse.OrderSummary> orderSummaries = batch.getShippingBatchOrders().stream()

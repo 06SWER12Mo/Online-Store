@@ -1,54 +1,82 @@
 package com.example.demo.review;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 
+import com.example.demo.review.dtos.ReviewRequest;
+import com.example.demo.review.dtos.ReviewResponse;
+
+/**
+ * Review Service Interface
+ * Defines all review-related business operations
+ */
 public interface ReviewService {
 
-    // CRUD operations
+    // ========== USER OPERATIONS ==========
+
+    /**
+     * Create a new review (pending approval)
+     */
     ReviewResponse createReview(Long userId, Long productId, ReviewRequest request);
-    ReviewResponse updateReview(Long userId, Long reviewId, ReviewUpdateRequest request);
-    void deleteReview(Long userId, Long reviewId);
-    void deleteReviewAdmin(Long reviewId);
-    ReviewResponse getReviewById(Long reviewId);
-    Page<ReviewResponse> getAllReviews(Pageable pageable);
-    
-    // Product reviews
-    Page<ReviewResponse> getProductReviews(Long productId, Pageable pageable);
-    List<ReviewResponse> getProductReviewsWithImages(Long productId);
-    Page<ReviewResponse> getProductReviewsByRating(Long productId, Integer rating, Pageable pageable);
-    List<ReviewResponse> getProductReviewsByMinRating(Long productId, Integer minRating);
-    List<ReviewResponse> getRecentProductReviews(Long productId);
-    List<ReviewResponse> getMostHelpfulProductReviews(Long productId);
-    List<ReviewResponse> searchProductReviews(Long productId, String keyword);
-    
-    // User reviews
-    Page<ReviewResponse> getUserReviews(Long userId, Pageable pageable);
-    boolean hasUserReviewedProduct(Long userId, Long productId);
-    ReviewResponse getUserReviewForProduct(Long userId, Long productId);
-    
-    // Admin operations
-    Page<ReviewResponse> getPendingReviews(Pageable pageable);
-    void approveReview(Long reviewId);
-    void rejectReview(Long reviewId);
-    void toggleFeaturedReview(Long reviewId);
-    List<ReviewResponse> getFeaturedReviews();
-    
-    // Helpful votes
-    void markReviewHelpful(Long userId, Long reviewId);
-    void markReviewUnhelpful(Long userId, Long reviewId);
-    void removeVote(Long userId, Long reviewId);
-    
-    // Reports
-    void reportReview(Long userId, Long reviewId, String reason, String description);
-    void resolveReport(Long reportId, String resolvedBy);
-    Page<ReviewReport> getUnresolvedReports(Pageable pageable);
-    
-    // Statistics
+
+    /**
+     * Get all approved reviews for a product (public)
+     */
+    List<ReviewResponse> getProductReviews(Long productId);
+
+    /**
+     * Get product average rating (public)
+     */
     double getProductAverageRating(Long productId);
-    long getProductTotalReviews(Long productId);
-    List<Object[]> getProductRatingDistribution(Long productId);
-    long countByProductIdAndRating(Long productId, Integer rating);
+
+    /**
+     * Get total review count for product (public)
+     */
+    long getProductReviewCount(Long productId);
+
+    /**
+     * Get user's own reviews
+     */
+    List<ReviewResponse> getUserReviews(Long userId);
+
+    /**
+     * Check if user has reviewed a product
+     */
+    boolean hasUserReviewedProduct(Long userId, Long productId);
+
+    /**
+     * Get user's review for a specific product
+     */
+    ReviewResponse getUserReviewForProduct(Long userId, Long productId);
+
+    /**
+     * Delete user's own review
+     */
+    void deleteUserReview(Long userId, Long reviewId);
+
+    // ========== ADMIN OPERATIONS ==========
+
+    /**
+     * Get all pending reviews (not approved)
+     */
+    List<ReviewResponse> getPendingReviews();
+
+    /**
+     * Approve a review
+     */
+    void approveReview(Long reviewId);
+
+    /**
+     * Reject a review (delete it)
+     */
+    void rejectReview(Long reviewId);
+
+    /**
+     * Admin: Delete any review
+     */
+    void deleteReviewAdmin(Long reviewId);
+
+    /**
+     * Admin: Get all reviews for a product (including pending)
+     */
+    List<ReviewResponse> getAllProductReviews(Long productId);
 }

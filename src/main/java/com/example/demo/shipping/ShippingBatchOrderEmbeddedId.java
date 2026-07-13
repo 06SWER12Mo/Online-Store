@@ -8,7 +8,7 @@ import java.util.Objects;
 public class ShippingBatchOrderEmbeddedId implements Serializable {
 
     private Long shippingBatchId;
-    private Long orderId;  // Keep as orderId, but @MapsId will map it to order_id column
+    private Long orderId;
 
     public ShippingBatchOrderEmbeddedId() {}
 
@@ -17,21 +17,11 @@ public class ShippingBatchOrderEmbeddedId implements Serializable {
         this.orderId = orderId;
     }
 
-    public Long getShippingBatchId() {
-        return shippingBatchId;
-    }
+    public Long getShippingBatchId() { return shippingBatchId; }
+    public void setShippingBatchId(Long shippingBatchId) { this.shippingBatchId = shippingBatchId; }
 
-    public void setShippingBatchId(Long shippingBatchId) {
-        this.shippingBatchId = shippingBatchId;
-    }
-
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
+    public Long getOrderId() { return orderId; }
+    public void setOrderId(Long orderId) { this.orderId = orderId; }
 
     @Override
     public boolean equals(Object o) {

@@ -3,6 +3,9 @@ package com.example.demo.category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.example.demo.category.dtos.CategoryRequest;
+import com.example.demo.category.dtos.CategoryResponse;
+
 import java.util.List;
 
 public interface CategoryService {

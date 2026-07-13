@@ -1,9 +1,8 @@
 package com.example.demo.shipping;
 
+import com.example.demo.location.BigArea;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
-import com.example.demo.location.BigArea;
 
 @Entity
 @Table(name = "buses")
@@ -32,8 +31,12 @@ public class Bus {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Constructors
     public Bus() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -56,9 +59,4 @@ public class Bus {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

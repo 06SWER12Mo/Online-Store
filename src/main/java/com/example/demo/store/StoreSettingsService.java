@@ -1,36 +1,29 @@
 package com.example.demo.store;
 
+import com.example.demo.store.dtos.StoreSettingsRequest;
+import com.example.demo.store.dtos.StoreSettingsResponse;
+
 public interface StoreSettingsService {
 
-    // Get settings
+    // Get full settings (Admin only)
     StoreSettingsResponse getSettings();
 
-    // Update settings
+    // Update settings (Admin only)
     StoreSettingsResponse updateSettings(StoreSettingsRequest request, String updatedBy);
 
-    // Maintenance mode
-    void toggleMaintenanceMode(boolean enabled, String message);
-
-    // Get store info (for public use)
+    // Get public store info (no auth needed)
     StoreSettingsResponse getPublicStoreInfo();
 
-    // Check if maintenance mode is enabled
+    // Toggle maintenance mode
+    void toggleMaintenanceMode(boolean enabled, String message);
+
+    // Helper methods for other services
     boolean isMaintenanceMode();
-
-    // Check if registration is allowed
     boolean isRegistrationAllowed();
-
-    // Get currency settings
     String getCurrencyCode();
     String getCurrencySymbol();
-
-    // Get shipping settings
     double getDefaultShippingCost();
     double getFreeShippingThreshold();
-
-    // Get tax rate
     double getTaxRate();
-
-    // Get items per page
     int getItemsPerPage();
 }

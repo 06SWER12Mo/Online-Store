@@ -1,8 +1,15 @@
 package com.example.demo.receipt;
 
 import com.example.demo.common.exception.ResourceNotFoundException;
+import com.example.demo.inventory.InventoryService;
+import com.example.demo.inventory.InventoryTransactionType;
 import com.example.demo.product.Product;
 import com.example.demo.product.ProductRepository;
+import com.example.demo.receipt.dtos.ReceiptItemRequest;
+import com.example.demo.receipt.dtos.ReceiptRequest;
+import com.example.demo.receipt.dtos.ReceiptResponse;
+import com.example.demo.receipt.dtos.SupplierRequest;
+import com.example.demo.receipt.dtos.SupplierResponse;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import org.springframework.data.domain.Page;
@@ -26,19 +33,24 @@ public class ReceiptServiceImpl implements ReceiptService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ReceiptMapper receiptMapper;
+    
+    // ✅ CLEAN INVENTORY INTEGRATION (NO REFERENCE TYPE!)
+    private final InventoryService inventoryService;
 
     public ReceiptServiceImpl(ReceiptRepository receiptRepository,
                               ReceiptItemRepository receiptItemRepository,
                               SupplierRepository supplierRepository,
                               ProductRepository productRepository,
                               UserRepository userRepository,
-                              ReceiptMapper receiptMapper) {
+                              ReceiptMapper receiptMapper,
+                              InventoryService inventoryService) {
         this.receiptRepository = receiptRepository;
         this.receiptItemRepository = receiptItemRepository;
         this.supplierRepository = supplierRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.receiptMapper = receiptMapper;
+        this.inventoryService = inventoryService;
     }
 
     // ========== RECEIPT OPERATIONS ==========
@@ -54,7 +66,7 @@ public class ReceiptServiceImpl implements ReceiptService {
                 .orElseThrow(() -> ResourceNotFoundException.userById(userId));
 
         // Create receipt
-        Receipt receipt = receiptMapper.toEntity(request, userId);
+        Receipt receipt = new Receipt();
         receipt.setReceiptNumber(generateReceiptNumber());
         receipt.setReceiptDate(request.getReceiptDate() != null ? request.getReceiptDate() : LocalDateTime.now());
         receipt.setStatus("PENDING");
@@ -65,6 +77,10 @@ public class ReceiptServiceImpl implements ReceiptService {
         receipt.setTaxAmount(BigDecimal.ZERO);
         receipt.setSubtotal(BigDecimal.ZERO);
         receipt.setTotalAmount(BigDecimal.ZERO);
+        receipt.setSupplier(supplier);
+        receipt.setCreatedBy(user);
+        receipt.setNotes(request.getNotes());
+        receipt.setPaymentMethod(request.getPaymentMethod());
 
         // Save receipt first
         Receipt savedReceipt = receiptRepository.save(receipt);
@@ -75,13 +91,27 @@ public class ReceiptServiceImpl implements ReceiptService {
                 Product product = productRepository.findById(itemRequest.getProductId())
                         .orElseThrow(() -> ResourceNotFoundException.productById(itemRequest.getProductId()));
 
+                // Create receipt item
                 ReceiptItem item = receiptMapper.toItemEntity(itemRequest, savedReceipt);
                 savedReceipt.addItem(item);
 
-                // Update product stock
+                // ✅ UPDATE PRODUCT STOCK
                 int newStock = product.getStockQuantity() + itemRequest.getQuantity();
                 product.setStockQuantity(newStock);
+                product.setInStock(newStock > 0);
                 productRepository.save(product);
+
+                // ✅ CREATE INVENTORY TRANSACTION - NO REFERENCE TYPE NEEDED!
+                inventoryService.createInventoryTransaction(
+                    product.getId(),                                    // Product ID
+                    InventoryTransactionType.RECEIVED_STOCK,            // Transaction Type
+                    itemRequest.getQuantity(),                          // Quantity
+                    savedReceipt.getId(),                               // Reference ID (Receipt ID)
+                    userId,                                             // User ID
+                    "Received from supplier: " + supplier.getName() +   // Notes
+                    " | Receipt: " + savedReceipt.getReceiptNumber() +
+                    " | Product: " + product.getName()
+                );
             }
         }
 
@@ -180,7 +210,20 @@ public class ReceiptServiceImpl implements ReceiptService {
                 Product product = item.getProduct();
                 int newStock = product.getStockQuantity() - item.getQuantity();
                 product.setStockQuantity(Math.max(0, newStock));
+                product.setInStock(newStock > 0);
                 productRepository.save(product);
+                
+                // ✅ REVERSE INVENTORY TRANSACTION - NO REFERENCE TYPE NEEDED!
+                inventoryService.createInventoryTransaction(
+                    product.getId(),                                    // Product ID
+                    InventoryTransactionType.ADJUSTMENT,                // Transaction Type
+                    item.getQuantity(),                                 // Quantity
+                    receipt.getId(),                                    // Reference ID
+                    null,                                               // User ID (system action)
+                    "Stock reversed: Receipt " + receipt.getReceiptNumber() + 
+                    " deleted | Product: " + product.getName() +
+                    " | Quantity: " + item.getQuantity()
+                );
             }
         }
         

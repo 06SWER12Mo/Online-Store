@@ -18,7 +18,6 @@ public class JwtService {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    // FIXED: Change from 'app.jwt.expiration-ms' to 'app.jwt.access-token-expiration'
     @Value("${app.jwt.access-token-expiration}")
     private long jwtExpirationMs;
 
@@ -28,9 +27,11 @@ public class JwtService {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-        String roles = userPrincipal.getAuthorities().stream()
+        // ✅ Simple role - just get the role name
+        String role = userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+                .findFirst()
+                .orElse("USER");
 
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
@@ -38,7 +39,7 @@ public class JwtService {
                 .setSubject(userPrincipal.getUsername())
                 .claim("userId", userPrincipal.getId())
                 .claim("email", userPrincipal.getEmail())
-                .claim("roles", roles)
+                .claim("role", role)  // ✅ Simple role claim
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key)
@@ -87,6 +88,17 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody()
                 .get("email", String.class);
+    }
+
+    // ✅ Get role from token
+    public String getRoleFromToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("role", String.class);
     }
 
     public boolean validateToken(String token) {

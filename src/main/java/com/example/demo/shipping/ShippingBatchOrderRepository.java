@@ -20,11 +20,5 @@ public interface ShippingBatchOrderRepository extends JpaRepository<ShippingBatc
     @Query("SELECT sbo FROM ShippingBatchOrder sbo WHERE sbo.shippingBatch.id = :batchId AND sbo.order.id = :orderId")
     Optional<ShippingBatchOrder> findByBatchIdAndOrderId(@Param("batchId") Long batchId, @Param("orderId") Long orderId);
 
-    @Query("SELECT COUNT(sbo) FROM ShippingBatchOrder sbo WHERE sbo.shippingBatch.id = :batchId")
-    Long countByBatchId(@Param("batchId") Long batchId);
-
-    @Query("SELECT sbo.order.id FROM ShippingBatchOrder sbo WHERE sbo.shippingBatch.id = :batchId")
-    List<Long> findOrderIdsByBatchId(@Param("batchId") Long batchId);
-
     boolean existsByOrderId(Long orderId);
 }

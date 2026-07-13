@@ -1,15 +1,17 @@
 package com.example.demo.inventory;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.example.demo.common.exception.ResourceNotFoundException;
+import com.example.demo.inventory.dtos.InventoryReportResponse;
+import com.example.demo.inventory.dtos.InventoryTransactionResponse;
+import com.example.demo.inventory.dtos.StockAdjustmentRequest;
 import com.example.demo.product.Product;
 import com.example.demo.product.ProductRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,7 +41,62 @@ public class InventoryServiceImpl implements InventoryService {
         this.inventoryMapper = inventoryMapper;
     }
 
-    // ========== TRANSACTION OPERATIONS ==========
+    // ========== ✅ CORE TRANSACTION METHOD - NOW UPDATES PRODUCT STOCK! ==========
+
+    @Override
+    public void createInventoryTransaction(
+            Long productId,
+            InventoryTransactionType type,
+            Integer quantity,
+            Long referenceId,
+            Long userId,
+            String notes) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> ResourceNotFoundException.productById(productId));
+
+        // ✅ DETERMINE STOCK CHANGE BASED ON TRANSACTION TYPE
+        int stockChange = 0;
+        switch (type) {
+            case RECEIVED_STOCK:
+            case RETURN:
+                stockChange = quantity;  // Stock IN (positive)
+                break;
+            case SALE:
+            case DAMAGED:
+                stockChange = -quantity; // Stock OUT (negative)
+                break;
+            case ADJUSTMENT:
+                // For adjustment, quantity is already calculated as the change
+                stockChange = quantity;
+                break;
+        }
+
+        // ✅ UPDATE PRODUCT STOCK
+        int newStock = product.getStockQuantity() + stockChange;
+        product.setStockQuantity(Math.max(0, newStock)); // Don't go below zero
+        product.setInStock(product.getStockQuantity() > 0);
+        productRepository.save(product);
+
+        // ✅ CREATE INVENTORY TRANSACTION
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId)
+                    .orElseThrow(() -> ResourceNotFoundException.userById(userId));
+        }
+
+        InventoryTransaction transaction = new InventoryTransaction();
+        transaction.setProduct(product);
+        transaction.setTransactionType(type);
+        transaction.setQuantity(Math.abs(quantity)); // Always store positive
+        transaction.setReferenceId(referenceId);
+        transaction.setNotes(notes);
+        transaction.setCreatedByUser(user);
+
+        inventoryTransactionRepository.save(transaction);
+    }
+
+    // ========== TRANSACTION QUERIES ==========
 
     @Override
     @Transactional(readOnly = true)
@@ -56,12 +113,12 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-@Transactional(readOnly = true)
-public InventoryTransactionResponse getTransactionById(Long id) {
-    InventoryTransaction transaction = inventoryTransactionRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Inventory transaction not found with id: " + id));
-    return inventoryMapper.toInventoryTransactionResponse(transaction);
-}
+    @Transactional(readOnly = true)
+    public InventoryTransactionResponse getTransactionById(Long id) {
+        InventoryTransaction transaction = inventoryTransactionRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Inventory transaction not found with id: " + id));
+        return inventoryMapper.toInventoryTransactionResponse(transaction);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -93,12 +150,12 @@ public InventoryTransactionResponse getTransactionById(Long id) {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventoryTransactionResponse> getTransactionsByReference(InventoryReferenceType referenceType, Long referenceId) {
+    public List<InventoryTransactionResponse> getTransactionsByReferenceId(Long referenceId) {
         return inventoryMapper.toInventoryTransactionResponseList(
-            inventoryTransactionRepository.findByReferenceTypeAndReferenceId(referenceType, referenceId));
+            inventoryTransactionRepository.findByReferenceId(referenceId));
     }
 
-    // ========== STOCK ADJUSTMENT OPERATIONS ==========
+    // ========== STOCK ADJUSTMENT ==========
 
     @Override
     public InventoryTransactionResponse adjustStock(StockAdjustmentRequest request, Long adjustedByUserId) {
@@ -114,6 +171,7 @@ public InventoryTransactionResponse getTransactionById(Long id) {
 
         // Update product stock
         product.setStockQuantity(newQuantity);
+        product.setInStock(newQuantity > 0);
         productRepository.save(product);
 
         // Create stock adjustment record
@@ -126,18 +184,26 @@ public InventoryTransactionResponse getTransactionById(Long id) {
         adjustment.setAdjustedBy(adjustedBy);
         stockAdjustmentRepository.save(adjustment);
 
-        // Create inventory transaction
-        InventoryTransaction transaction = new InventoryTransaction();
-        transaction.setProduct(product);
-        transaction.setTransactionType(InventoryTransactionType.Adjustment);
-        transaction.setQuantity(Math.abs(adjustmentQuantity));
-        transaction.setReferenceType(InventoryReferenceType.ManualAdjustment);
-        transaction.setReferenceId(adjustment.getId());
-        transaction.setCreatedByUser(adjustedBy);
-        transaction.setNotes("Stock adjusted from " + previousQuantity + " to " + newQuantity + ". Reason: " + request.getReason());
-        inventoryTransactionRepository.save(transaction);
+        // ✅ CREATE INVENTORY TRANSACTION - passes the adjustment quantity
+        createInventoryTransaction(
+            product.getId(),
+            InventoryTransactionType.ADJUSTMENT,
+            adjustmentQuantity, // Pass the actual change (positive or negative)
+            adjustment.getId(),
+            adjustedByUserId,
+            "Stock adjusted from " + previousQuantity + " to " + newQuantity + 
+            ". Reason: " + request.getReason()
+        );
 
-        return inventoryMapper.toInventoryTransactionResponse(transaction);
+        // Get the created transaction
+        List<InventoryTransaction> transactions = inventoryTransactionRepository
+            .findByReferenceId(adjustment.getId());
+        
+        if (!transactions.isEmpty()) {
+            return inventoryMapper.toInventoryTransactionResponse(transactions.get(0));
+        }
+        
+        throw new RuntimeException("Failed to create inventory transaction");
     }
 
     @Override
@@ -160,22 +226,22 @@ public InventoryTransactionResponse getTransactionById(Long id) {
         InventoryReportResponse report = new InventoryReportResponse();
         report.setProductId(product.getId());
         report.setProductName(product.getName());
-        report.setProductSku(product.getSku());  // FIXED: using setProductSku
+        report.setProductSku(product.getSku());
         report.setCurrentStock(product.getStockQuantity());
         report.setCurrentStockValue(
             product.getPrice().multiply(BigDecimal.valueOf(product.getStockQuantity())));
 
-        // Calculate totals by transaction type - FIXED: using Integer directly
+        // ✅ Calculate totals by transaction type
         report.setTotalReceived(
-            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.ReceivedStock));
+            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.RECEIVED_STOCK));
         report.setTotalSold(
-            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.Sale));
+            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.SALE));
         report.setTotalReturned(
-            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.Return));
+            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.RETURN));
         report.setTotalDamaged(
-            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.Damaged));
+            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.DAMAGED));
         report.setTotalAdjusted(
-            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.Adjustment));
+            inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.ADJUSTMENT));
 
         // Get recent transactions
         List<InventoryTransaction> recentTransactions = inventoryTransactionRepository.findByProductId(productId);
@@ -198,7 +264,7 @@ public InventoryTransactionResponse getTransactionById(Long id) {
             .collect(Collectors.toList());
     }
 
-    // ========== STOCK LEVEL OPERATIONS ==========
+    // ========== STOCK LEVELS ==========
 
     @Override
     @Transactional(readOnly = true)
@@ -252,5 +318,29 @@ public InventoryTransactionResponse getTransactionById(Long id) {
         return productRepository.findAll().stream()
             .mapToInt(Product::getStockQuantity)
             .sum();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getTotalReceivedStock() {
+        return inventoryTransactionRepository.getTotalReceivedStock();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getTotalSoldStock() {
+        return inventoryTransactionRepository.getTotalSoldStock();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getTotalDamagedStock() {
+        return inventoryTransactionRepository.getTotalDamagedStock();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getTotalReturnedStock() {
+        return inventoryTransactionRepository.getTotalReturnedStock();
     }
 }

@@ -1,10 +1,9 @@
 package com.example.demo.inventory;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-
 import com.example.demo.product.Product;
 import com.example.demo.user.User;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stock_adjustments")
@@ -18,13 +17,13 @@ public class StockAdjustment {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(nullable = false)
+    @Column(name = "previous_quantity", nullable = false)
     private Integer previousQuantity;
 
-    @Column(nullable = false)
+    @Column(name = "new_quantity", nullable = false)
     private Integer newQuantity;
 
-    @Column(nullable = false)
+    @Column(name = "adjustment_quantity", nullable = false)
     private Integer adjustmentQuantity;
 
     @Column(length = 1000)
@@ -39,6 +38,11 @@ public class StockAdjustment {
 
     // Constructors
     public StockAdjustment() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -64,9 +68,4 @@ public class StockAdjustment {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

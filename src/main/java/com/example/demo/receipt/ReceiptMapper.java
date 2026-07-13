@@ -2,6 +2,11 @@ package com.example.demo.receipt;
 
 import com.example.demo.product.Product;
 import com.example.demo.product.ProductRepository;
+import com.example.demo.receipt.dtos.ReceiptItemRequest;
+import com.example.demo.receipt.dtos.ReceiptItemResponse;
+import com.example.demo.receipt.dtos.ReceiptRequest;
+import com.example.demo.receipt.dtos.ReceiptResponse;
+import com.example.demo.receipt.dtos.SupplierResponse;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import org.springframework.stereotype.Component;

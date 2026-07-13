@@ -3,6 +3,11 @@ package com.example.demo.receipt;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.example.demo.receipt.dtos.ReceiptRequest;
+import com.example.demo.receipt.dtos.ReceiptResponse;
+import com.example.demo.receipt.dtos.SupplierRequest;
+import com.example.demo.receipt.dtos.SupplierResponse;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;

@@ -1,11 +1,10 @@
 package com.example.demo.shipping;
 
+import com.example.demo.location.BigArea;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.example.demo.location.BigArea;
 
 @Entity
 @Table(name = "shipping_batches")
@@ -25,10 +24,10 @@ public class ShippingBatch {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ShippingStatus status = ShippingStatus.CollectingOrders;
+    private ShippingStatus status = ShippingStatus.COLLECTING_ORDERS;
 
     @Column(nullable = false)
-    private Integer minimumOrders;
+    private Integer minimumOrders = 10;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -37,11 +36,18 @@ public class ShippingBatch {
 
     private LocalDateTime deliveredAt;
 
+    @Column(name = "auto_deliver_at")
+    private LocalDateTime autoDeliverAt;
+
     @OneToMany(mappedBy = "shippingBatch", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ShippingBatchOrder> shippingBatchOrders = new HashSet<>();
 
-    // Constructors
     public ShippingBatch() {}
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -68,12 +74,12 @@ public class ShippingBatch {
     public LocalDateTime getDeliveredAt() { return deliveredAt; }
     public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
 
-    public Set<ShippingBatchOrder> getShippingBatchOrders() { return shippingBatchOrders; }
-    public void setShippingBatchOrders(Set<ShippingBatchOrder> shippingBatchOrders) { this.shippingBatchOrders = shippingBatchOrders; }
+    public LocalDateTime getAutoDeliverAt() { return autoDeliverAt; }
+    public void setAutoDeliverAt(LocalDateTime autoDeliverAt) { this.autoDeliverAt = autoDeliverAt; }
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
+    public Set<ShippingBatchOrder> getShippingBatchOrders() { return shippingBatchOrders; }
+    public void setShippingBatchOrders(Set<ShippingBatchOrder> shippingBatchOrders) { 
+        this.shippingBatchOrders = shippingBatchOrders; 
     }
 
     // Helper methods

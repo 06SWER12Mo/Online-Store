@@ -1,13 +1,11 @@
 package com.example.demo.shipping;
 
-import jakarta.persistence.*;
-import java.io.Serializable;
-
 import com.example.demo.order.Order;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "shipping_batch_orders")
-public class ShippingBatchOrder implements Serializable {
+public class ShippingBatchOrder {
 
     @EmbeddedId
     private ShippingBatchOrderEmbeddedId id;
@@ -22,7 +20,6 @@ public class ShippingBatchOrder implements Serializable {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    // Constructors
     public ShippingBatchOrder() {}
 
     public ShippingBatchOrder(ShippingBatch shippingBatch, Order order) {
@@ -35,20 +32,12 @@ public class ShippingBatchOrder implements Serializable {
     }
 
     // Getters and Setters
-    public ShippingBatchOrderEmbeddedId getId() {
-        return id;
-    }
+    public ShippingBatchOrderEmbeddedId getId() { return id; }
+    public void setId(ShippingBatchOrderEmbeddedId id) { this.id = id; }
 
-    public void setId(ShippingBatchOrderEmbeddedId id) {
-        this.id = id;
-    }
-
-    public ShippingBatch getShippingBatch() {
-        return shippingBatch;
-    }
-
-    public void setShippingBatch(ShippingBatch shippingBatch) {
-        this.shippingBatch = shippingBatch;
+    public ShippingBatch getShippingBatch() { return shippingBatch; }
+    public void setShippingBatch(ShippingBatch shippingBatch) { 
+        this.shippingBatch = shippingBatch; 
         if (shippingBatch != null && this.id == null) {
             this.id = new ShippingBatchOrderEmbeddedId();
         }
@@ -57,12 +46,9 @@ public class ShippingBatchOrder implements Serializable {
         }
     }
 
-    public Order getOrder() {
-        return order;
-    }
-
-    public void setOrder(Order order) {
-        this.order = order;
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { 
+        this.order = order; 
         if (order != null && this.id == null) {
             this.id = new ShippingBatchOrderEmbeddedId();
         }

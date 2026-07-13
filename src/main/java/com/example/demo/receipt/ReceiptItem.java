@@ -4,6 +4,7 @@ import com.example.demo.product.Product;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "receipt_items")
@@ -56,108 +57,73 @@ public class ReceiptItem {
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
+    public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
         calculateTotals();
     }
 
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
-    }
-
+    public BigDecimal getUnitPrice() { return unitPrice; }
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
         calculateTotals();
     }
 
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
-    }
+    public BigDecimal getTotalPrice() { return totalPrice; }
+    public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
 
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-
-    public BigDecimal getDiscountPercent() {
-        return discountPercent;
-    }
-
+    public BigDecimal getDiscountPercent() { return discountPercent; }
     public void setDiscountPercent(BigDecimal discountPercent) {
         this.discountPercent = discountPercent;
         calculateTotals();
     }
 
-    public BigDecimal getDiscountAmount() {
-        return discountAmount;
-    }
-
+    public BigDecimal getDiscountAmount() { return discountAmount; }
     public void setDiscountAmount(BigDecimal discountAmount) {
         this.discountAmount = discountAmount;
         calculateTotals();
     }
 
-    public BigDecimal getTaxPercent() {
-        return taxPercent;
-    }
-
+    public BigDecimal getTaxPercent() { return taxPercent; }
     public void setTaxPercent(BigDecimal taxPercent) {
         this.taxPercent = taxPercent;
         calculateTotals();
     }
 
-    public BigDecimal getTaxAmount() {
-        return taxAmount;
-    }
-
+    public BigDecimal getTaxAmount() { return taxAmount; }
     public void setTaxAmount(BigDecimal taxAmount) {
         this.taxAmount = taxAmount;
         calculateTotals();
     }
 
-    public String getNotes() {
-        return notes;
-    }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
+    public Receipt getReceipt() { return receipt; }
+    public void setReceipt(Receipt receipt) { this.receipt = receipt; }
 
-    public Receipt getReceipt() {
-        return receipt;
-    }
-
-    public void setReceipt(Receipt receipt) {
-        this.receipt = receipt;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
+    public Product getProduct() { return product; }
+    public void setProduct(Product product) { this.product = product; }
 
     // Helper methods
     public void calculateTotals() {
+        if (unitPrice == null || quantity == null) {
+            this.totalPrice = BigDecimal.ZERO;
+            this.discountAmount = BigDecimal.ZERO;
+            this.taxAmount = BigDecimal.ZERO;
+            return;
+        }
+
         BigDecimal subtotal = this.unitPrice.multiply(BigDecimal.valueOf(this.quantity));
         
         // Calculate discount
         BigDecimal discount = BigDecimal.ZERO;
         if (this.discountPercent != null && this.discountPercent.compareTo(BigDecimal.ZERO) > 0) {
-            discount = subtotal.multiply(this.discountPercent).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            discount = subtotal.multiply(this.discountPercent)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         } else if (this.discountAmount != null) {
             discount = this.discountAmount;
         }
@@ -165,7 +131,9 @@ public class ReceiptItem {
         // Calculate tax
         BigDecimal tax = BigDecimal.ZERO;
         if (this.taxPercent != null && this.taxPercent.compareTo(BigDecimal.ZERO) > 0) {
-            tax = subtotal.subtract(discount).multiply(this.taxPercent).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            tax = subtotal.subtract(discount)
+                    .multiply(this.taxPercent)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
         
         this.discountAmount = discount;

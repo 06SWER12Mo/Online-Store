@@ -3,6 +3,13 @@ package com.example.demo.location;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.example.demo.location.dtos.BigAreaRequest;
+import com.example.demo.location.dtos.BigAreaResponse;
+import com.example.demo.location.dtos.DeliveryAddressRequest;
+import com.example.demo.location.dtos.DeliveryAddressResponse;
+import com.example.demo.location.dtos.TownRequest;
+import com.example.demo.location.dtos.TownResponse;
+
 import java.util.List;
 
 public interface LocationService {

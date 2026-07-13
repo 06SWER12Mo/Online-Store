@@ -3,6 +3,10 @@ package com.example.demo.user;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.example.demo.user.dtos.UserRequest;
+import com.example.demo.user.dtos.UserResponse;
+import com.example.demo.user.dtos.UserUpdateRequest;
+
 import java.time.LocalDateTime;
 
 @Component
@@ -25,6 +29,7 @@ public class UserMapper {
         user.setEnabled(true);
         user.setLocked(false);
         user.setEmailVerified(false);
+        user.setRole(Role.USER);  // ✅ Default role
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         return user;
@@ -57,48 +62,5 @@ public class UserMapper {
 
     public UserResponse toResponse(User user) {
         return new UserResponse(user);
-    }
-
-    public Address toAddressEntity(AddressRequest request, User user) {
-        Address address = new Address();
-        address.setStreet(request.getStreet());
-        address.setCity(request.getCity());
-        address.setState(request.getState());
-        address.setZipCode(request.getZipCode());
-        address.setCountry(request.getCountry());
-        address.setDefault(request.isDefault());
-        address.setAddressType(request.getAddressType());
-        address.setPhoneNumber(request.getPhoneNumber());
-        address.setAdditionalInfo(request.getAdditionalInfo());
-        address.setUser(user);
-        return address;
-    }
-
-    public void updateAddressEntity(Address address, AddressRequest request) {
-        if (request.getStreet() != null) {
-            address.setStreet(request.getStreet());
-        }
-        if (request.getCity() != null) {
-            address.setCity(request.getCity());
-        }
-        if (request.getState() != null) {
-            address.setState(request.getState());
-        }
-        if (request.getZipCode() != null) {
-            address.setZipCode(request.getZipCode());
-        }
-        if (request.getCountry() != null) {
-            address.setCountry(request.getCountry());
-        }
-        address.setDefault(request.isDefault());
-        if (request.getAddressType() != null) {
-            address.setAddressType(request.getAddressType());
-        }
-        if (request.getPhoneNumber() != null) {
-            address.setPhoneNumber(request.getPhoneNumber());
-        }
-        if (request.getAdditionalInfo() != null) {
-            address.setAdditionalInfo(request.getAdditionalInfo());
-        }
     }
 }

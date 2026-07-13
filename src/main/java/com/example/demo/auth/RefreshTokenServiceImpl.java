@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -19,7 +18,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
-    @Value("${app.jwt.refresh-token-expiration:604800000}") // 7 days in milliseconds
+    @Value("${app.jwt.refresh-token-expiration:604800000}")
     private long refreshTokenExpirationMs;
 
     public RefreshTokenServiceImpl(RefreshTokenRepository refreshTokenRepository,
@@ -30,15 +29,13 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public RefreshToken createRefreshToken(User user) {
-        // Revoke any existing refresh tokens for this user
-        refreshTokenRepository.revokeAllUserTokens(user.getId());
+        refreshTokenRepository.deleteByUserId(user.getId());
+        refreshTokenRepository.flush();
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setUser(user);
-        // FIXED: Use plusNanos with milliseconds converted to nanoseconds
-        // OR use Instant.ofEpochMilli() approach
-        refreshToken.setExpiryDate(LocalDateTime.now().plusNanos(refreshTokenExpirationMs * 1_000_000L));
+        refreshToken.setExpiryDate(LocalDateTime.now().plusSeconds(refreshTokenExpirationMs / 1000));
         refreshToken.setRevoked(false);
 
         return refreshTokenRepository.save(refreshToken);

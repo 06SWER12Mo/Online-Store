@@ -1,10 +1,9 @@
 package com.example.demo.inventory;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-
 import com.example.demo.product.Product;
 import com.example.demo.user.User;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inventory_transactions")
@@ -19,17 +18,14 @@ public class InventoryTransaction {
     private Product product;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "transaction_type", nullable = false)
     private InventoryTransactionType transactionType;
 
     @Column(nullable = false)
     private Integer quantity;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private InventoryReferenceType referenceType;
-
-    @Column(nullable = false)
+    // ✅ Just the reference ID - NO TYPE NEEDED!
+    @Column(name = "reference_id")
     private Long referenceId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -45,7 +41,12 @@ public class InventoryTransaction {
     // Constructors
     public InventoryTransaction() {}
 
-    // Getters and Setters
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    // ========== GETTERS AND SETTERS ==========
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -53,13 +54,12 @@ public class InventoryTransaction {
     public void setProduct(Product product) { this.product = product; }
 
     public InventoryTransactionType getTransactionType() { return transactionType; }
-    public void setTransactionType(InventoryTransactionType transactionType) { this.transactionType = transactionType; }
+    public void setTransactionType(InventoryTransactionType transactionType) { 
+        this.transactionType = transactionType; 
+    }
 
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
-
-    public InventoryReferenceType getReferenceType() { return referenceType; }
-    public void setReferenceType(InventoryReferenceType referenceType) { this.referenceType = referenceType; }
 
     public Long getReferenceId() { return referenceId; }
     public void setReferenceId(Long referenceId) { this.referenceId = referenceId; }
@@ -72,9 +72,4 @@ public class InventoryTransaction {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

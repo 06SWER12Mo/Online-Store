@@ -1,5 +1,11 @@
 package com.example.demo.location;
 
+import com.example.demo.location.dtos.BigAreaRequest;
+import com.example.demo.location.dtos.BigAreaResponse;
+import com.example.demo.location.dtos.DeliveryAddressRequest;
+import com.example.demo.location.dtos.DeliveryAddressResponse;
+import com.example.demo.location.dtos.TownRequest;
+import com.example.demo.location.dtos.TownResponse;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import org.springframework.stereotype.Component;

@@ -3,14 +3,23 @@ package com.example.demo.auth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.auth.dtos.AuthResponse;
+import com.example.demo.auth.dtos.LoginRequest;
+import com.example.demo.auth.dtos.RefreshTokenRequest;
+import com.example.demo.auth.dtos.RegisterRequest;
+import com.example.demo.auth.dtos.UserProfileResponse;
+import com.example.demo.security.UserPrincipal;
+
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @Tag(name = "Authentication", description = "Authentication endpoints")
 public class AuthController {
 
@@ -50,22 +59,14 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "Get current user", description = "Get profile of authenticated user")
-    public ResponseEntity<UserProfileResponse> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        com.example.demo.user.User user = (com.example.demo.user.User) authentication.getPrincipal();
-        UserProfileResponse response = authService.getCurrentUserProfile(user.getId());
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/logout/header")
-    @Operation(summary = "Logout using header", description = "Logout by sending token in Authorization header")
-    public ResponseEntity<Void> logoutFromHeader(@RequestHeader("Authorization") String authorization) {
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getPrincipal() instanceof com.example.demo.user.User) {
-                SecurityContextHolder.clearContext();
-            }
+    public ResponseEntity<UserProfileResponse> getCurrentUser(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        if (userPrincipal == null) {
+            throw new AuthenticationException("User not authenticated") {};
         }
-        return ResponseEntity.ok().build();
+        
+        UserProfileResponse response = authService.getCurrentUserProfile(userPrincipal.getId());
+        return ResponseEntity.ok(response);
     }
 }

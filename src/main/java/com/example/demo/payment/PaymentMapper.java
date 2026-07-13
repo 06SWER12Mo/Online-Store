@@ -2,6 +2,9 @@ package com.example.demo.payment;
 
 import org.springframework.stereotype.Component;
 
+import com.example.demo.payment.dtos.PaymentRequest;
+import com.example.demo.payment.dtos.PaymentResponse;
+
 @Component
 public class PaymentMapper {
 
@@ -26,7 +29,7 @@ public class PaymentMapper {
         Payment payment = new Payment();
         payment.setAmount(request.getAmount());
         payment.setMethod(request.getPaymentMethod());
-        payment.setStatus(PaymentStatus.Pending);
+        payment.setStatus(PaymentStatus.PENDING);
 
         return payment;
     }

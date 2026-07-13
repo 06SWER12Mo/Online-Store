@@ -3,10 +3,18 @@ package com.example.demo.order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.example.demo.order.dtos.OrderResponse;
+import com.example.demo.order.dtos.OrderSummaryResponse;
+import com.example.demo.order.dtos.OrderTrackingRequest;
+import com.example.demo.order.dtos.PlaceOrderRequest;
+import com.example.demo.order.dtos.TrackingResponse;
+import com.example.demo.order.dtos.UpdateOrderStatusRequest;
+
 import java.util.List;
 
 public interface OrderService {
 
+    // ========== BASIC CRUD ==========
     OrderResponse placeOrder(PlaceOrderRequest request);
 
     OrderResponse getOrderById(Long id);
@@ -21,15 +29,23 @@ public interface OrderService {
 
     Page<OrderSummaryResponse> getAllOrders(Pageable pageable);
 
+    // ========== ORDER MANAGEMENT ==========
     OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request);
-
-    TrackingResponse trackOrder(String trackingCode);
-
-    OrderResponse trackOrderByTrackingCode(OrderTrackingRequest request);
 
     void cancelOrder(Long orderId);
 
     List<OrderResponse> getOrdersByStatus(OrderStatus status);
 
     OrderSummaryResponse getOrderSummary(Long orderId);
+
+    // ========== SHIPPING INTEGRATION ==========
+    OrderResponse markOrderReadyForShipping(Long orderId);
+
+    // ========== TRACKING ==========
+    TrackingResponse trackOrder(String trackingCode);
+
+    OrderResponse trackOrderByTrackingCode(OrderTrackingRequest request);
+
+    // ========== DELIVERY ==========
+    OrderResponse confirmDelivery(Long orderId);
 }

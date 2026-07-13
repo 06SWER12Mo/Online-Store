@@ -1,6 +1,12 @@
 package com.example.demo.receipt;
 
-import com.example.demo.common.ApiResponse;
+import com.example.demo.common.dtos.ApiResponse;
+import com.example.demo.receipt.dtos.ReceiptRequest;
+import com.example.demo.receipt.dtos.ReceiptResponse;
+import com.example.demo.receipt.dtos.SupplierRequest;
+import com.example.demo.receipt.dtos.SupplierResponse;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +24,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/receipts")
+@RequestMapping("/api/v1/receipts")
+@Tag(name = "Receipts", description = "Endpoints for managing receipts and suppliers")
 public class ReceiptController {
 
     private final ReceiptService receiptService;
@@ -35,7 +42,7 @@ public class ReceiptController {
         Long userId = getCurrentUserId();
         ReceiptResponse response = receiptService.createReceipt(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Receipt created successfully", response));
+                .body(ApiResponse.success("Receipt created successfully. Stock updated.", response));
     }
 
     @GetMapping("/{id}")

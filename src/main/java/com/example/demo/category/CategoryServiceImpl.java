@@ -1,5 +1,8 @@
 package com.example.demo.category;
 
+import com.example.demo.category.dtos.CategoryRequest;
+import com.example.demo.category.dtos.CategoryResponse;
+import com.example.demo.image.ImageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,21 +16,26 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    
+    // ✅ ImageService
+    private final ImageService imageService;
 
     public CategoryServiceImpl(CategoryRepository categoryRepository,
-                               CategoryMapper categoryMapper) {
+                               CategoryMapper categoryMapper,
+                               ImageService imageService) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
+        this.imageService = imageService;
     }
+
+    // ========== CREATE ==========
 
     @Override
     public CategoryResponse createCategory(CategoryRequest request) {
-        // Check if category name already exists
         if (categoryRepository.existsByName(request.getName())) {
             throw new RuntimeException("Category with name '" + request.getName() + "' already exists");
         }
 
-        // Get parent category if provided
         Category parentCategory = null;
         if (request.getParentId() != null) {
             parentCategory = categoryRepository.findById(request.getParentId())
@@ -39,16 +47,16 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryMapper.toResponse(savedCategory);
     }
 
+    // ========== UPDATE ==========
+
     @Override
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = findCategoryById(id);
 
-        // Check if category name already exists (excluding current category)
         if (request.getName() != null && categoryRepository.existsByNameAndIdNot(request.getName(), id)) {
             throw new RuntimeException("Category with name '" + request.getName() + "' already exists");
         }
 
-        // Get parent category if provided
         Category parentCategory = null;
         if (request.getParentId() != null) {
             if (request.getParentId().equals(id)) {
@@ -58,23 +66,28 @@ public class CategoryServiceImpl implements CategoryService {
                     .orElseThrow(() -> new RuntimeException("Parent category not found with id: " + request.getParentId()));
         }
 
-        // Update category
         categoryMapper.updateEntity(category, request, parentCategory);
         Category updatedCategory = categoryRepository.save(category);
         return categoryMapper.toResponse(updatedCategory);
     }
 
+    // ========== DELETE ==========
+
     @Override
     public void deleteCategory(Long id) {
         Category category = findCategoryById(id);
 
-        // Check if category has sub-categories
         if (!category.getSubCategories().isEmpty()) {
             throw new RuntimeException("Cannot delete category with sub-categories. Please delete sub-categories first.");
         }
 
+        // ✅ Delete category image via ImageService
+        imageService.deleteAllImages("category", id);
+
         categoryRepository.delete(category);
     }
+
+    // ========== GET ==========
 
     @Override
     public CategoryResponse getCategoryById(Long id) {
@@ -124,6 +137,8 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryMapper.toResponseList(subCategories);
     }
 
+    // ========== TOGGLE ==========
+
     @Override
     public void toggleCategoryActive(Long id) {
         Category category = findCategoryById(id);
@@ -136,11 +151,15 @@ public class CategoryServiceImpl implements CategoryService {
         categoryRepository.updateDisplayOrder(id, displayOrder);
     }
 
+    // ========== SEARCH ==========
+
     @Override
     public List<CategoryResponse> searchCategories(String keyword) {
         List<Category> categories = categoryRepository.searchCategories(keyword);
         return categoryMapper.toResponseList(categories);
     }
+
+    // ========== COUNT ==========
 
     @Override
     public long countSubCategories(Long parentId) {
@@ -152,7 +171,8 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.existsById(id);
     }
 
-    // Helper method
+    // ========== HELPER ==========
+
     private Category findCategoryById(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));

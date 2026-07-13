@@ -3,7 +3,9 @@ package com.example.demo.user;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
+import com.example.demo.user.dtos.UserRequest;
+import com.example.demo.user.dtos.UserResponse;
+import com.example.demo.user.dtos.UserUpdateRequest;
 
 public interface UserService {
 
@@ -31,21 +33,8 @@ public interface UserService {
 
     void verifyUserEmail(Long id);
 
-    // Address methods
-    AddressResponse addAddress(Long userId, AddressRequest request);
-
-    AddressResponse updateAddress(Long userId, Long addressId, AddressRequest request);
-
-    void deleteAddress(Long userId, Long addressId);
-
-    List<AddressResponse> getUserAddresses(Long userId);
-
-    AddressResponse getDefaultAddress(Long userId);
-
-    // Role methods
-    void assignRoleToUser(Long userId, RoleName roleName);
-
-    void removeRoleFromUser(Long userId, RoleName roleName);
+    // ✅ Simple role update - just the ENUM
+    void updateUserRole(Long userId, Role role);
 
     // Statistics
     long countTotalUsers();

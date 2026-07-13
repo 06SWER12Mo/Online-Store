@@ -20,8 +20,5 @@ public interface BusRepository extends JpaRepository<Bus, Long> {
     @Query("SELECT b FROM Bus b WHERE b.bigArea.id = :bigAreaId AND b.isActive = true")
     List<Bus> findActiveBusesByBigAreaId(@Param("bigAreaId") Long bigAreaId);
 
-    @Query("SELECT b FROM Bus b WHERE b.capacity >= :minCapacity AND b.isActive = true")
-    List<Bus> findActiveBusesWithMinCapacity(@Param("minCapacity") Integer minCapacity);
-
     boolean existsByPlateNumber(String plateNumber);
 }

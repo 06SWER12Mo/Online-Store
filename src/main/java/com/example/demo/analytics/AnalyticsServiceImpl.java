@@ -2,6 +2,8 @@ package com.example.demo.analytics;
 
 import com.example.demo.category.Category;
 import com.example.demo.category.CategoryRepository;
+import com.example.demo.image.ImageService;
+import com.example.demo.image.dtos.ImageResponse;
 import com.example.demo.order.Order;
 import com.example.demo.order.OrderRepository;
 import com.example.demo.product.Product;
@@ -19,6 +21,12 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.example.demo.analytics.dtos.CategoryAnalyticsResponse;
+import com.example.demo.analytics.dtos.DashboardResponse;
+import com.example.demo.analytics.dtos.GeographicReportResponse;
+import com.example.demo.analytics.dtos.ProductAnalyticsResponse;
+import com.example.demo.analytics.dtos.SalesReportResponse;
+
 @Service
 public class AnalyticsServiceImpl implements AnalyticsService {
 
@@ -27,17 +35,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
+    
+    // ✅ ImageService for product images
+    private final ImageService imageService;
 
     public AnalyticsServiceImpl(OrderRepository orderRepository,
                                 ProductRepository productRepository,
                                 CategoryRepository categoryRepository,
                                 UserRepository userRepository,
-                                ReviewRepository reviewRepository) {
+                                ReviewRepository reviewRepository,
+                                ImageService imageService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.reviewRepository = reviewRepository;
+        this.imageService = imageService;
     }
 
     // ========== DASHBOARD ==========
@@ -78,12 +91,12 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             response.setAverageOrderValue(BigDecimal.ZERO);
         }
 
-        // Order status distribution - using OrderStatus enum values
-        response.setPendingOrders(orderRepository.countByStatus("PendingPayment"));
-        response.setProcessingOrders(orderRepository.countByStatus("Paid"));
-        response.setShippedOrders(orderRepository.countByStatus("Shipped"));
-        response.setDeliveredOrders(orderRepository.countByStatus("Delivered"));
-        response.setCancelledOrders(orderRepository.countByStatus("Cancelled"));
+        // Order status distribution
+        response.setPendingOrders(orderRepository.countByStatus("PENDING_PAYMENT"));
+        response.setProcessingOrders(orderRepository.countByStatus("PAID"));
+        response.setShippedOrders(orderRepository.countByStatus("SHIPPED"));
+        response.setDeliveredOrders(orderRepository.countByStatus("DELIVERED"));
+        response.setCancelledOrders(orderRepository.countByStatus("CANCELLED"));
 
         // Stock metrics
         response.setLowStockProducts(productRepository.countLowStockProducts(10));
@@ -113,8 +126,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public DashboardResponse getDashboardData(LocalDateTime startDate, LocalDateTime endDate) {
-        // For filtered dashboard, we still get the full data
-        // Could be enhanced to filter based on date range
         return getDashboardData();
     }
 
@@ -239,9 +250,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                     response.setCategoryName(product.getCategory().getName());
                 }
 
-                if (product.getImages() != null && !product.getImages().isEmpty()) {
-                    response.setPrimaryImageUrl(product.getImages().get(0).getImageUrl());
-                }
+                // ✅ Get primary image from ImageService
+                setProductPrimaryImage(response, productId);
             }
 
             responses.add(response);
@@ -312,6 +322,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .collect(Collectors.toList());
     }
 
+    // ========== PRIVATE HELPER METHODS ==========
+
     private ProductAnalyticsResponse toProductAnalyticsResponse(Product product) {
         ProductAnalyticsResponse response = new ProductAnalyticsResponse();
         response.setProductId(product.getId());
@@ -336,27 +348,45 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             response.setCategoryName(product.getCategory().getName());
         }
 
-        if (product.getImages() != null && !product.getImages().isEmpty()) {
-            response.setPrimaryImageUrl(product.getImages().get(0).getImageUrl());
-        }
+        // ✅ Get primary image from ImageService
+        setProductPrimaryImage(response, product.getId());
 
         return response;
+    }
+
+    // ✅ Helper method to set primary image using ImageService
+    private void setProductPrimaryImage(ProductAnalyticsResponse response, Long productId) {
+        try {
+            ImageResponse primaryImage = imageService.getPrimaryImage("product", productId);
+            if (primaryImage != null) {
+                response.setPrimaryImageUrl(primaryImage.getImageUrl());
+            } else {
+                // Try to get first image if no primary
+                List<ImageResponse> images = imageService.getProductImages(productId);
+                if (!images.isEmpty()) {
+                    response.setPrimaryImageUrl(images.get(0).getImageUrl());
+                }
+            }
+        } catch (Exception e) {
+            // If image loading fails, continue without image
+            response.setPrimaryImageUrl(null);
+        }
     }
 
     // ========== CATEGORY ANALYTICS ==========
 
     @Override
-public List<CategoryAnalyticsResponse> getCategoryAnalytics() {
-    List<Category> categories = categoryRepository.findAll();
-    BigDecimal totalRevenue = orderRepository.getTotalRevenue();
-    totalRevenue = totalRevenue != null ? totalRevenue : BigDecimal.ZERO;
-    
-    BigDecimal finalTotalRevenue = totalRevenue;
-    
-    return categories.stream()
-            .map(category -> toCategoryAnalyticsResponse(category, finalTotalRevenue))
-            .collect(Collectors.toList());
-}
+    public List<CategoryAnalyticsResponse> getCategoryAnalytics() {
+        List<Category> categories = categoryRepository.findAll();
+        BigDecimal totalRevenue = orderRepository.getTotalRevenue();
+        totalRevenue = totalRevenue != null ? totalRevenue : BigDecimal.ZERO;
+        
+        BigDecimal finalTotalRevenue = totalRevenue;
+        
+        return categories.stream()
+                .map(category -> toCategoryAnalyticsResponse(category, finalTotalRevenue))
+                .collect(Collectors.toList());
+    }
 
     @Override
     public CategoryAnalyticsResponse getCategoryAnalyticsById(Long categoryId) {
@@ -426,8 +456,6 @@ public List<CategoryAnalyticsResponse> getCategoryAnalytics() {
     @Override
     public GeographicReportResponse getGeographicReport() {
         GeographicReportResponse response = new GeographicReportResponse();
-        // Implementation would require location data in orders
-        // This is a placeholder
         response.setTotalRevenue(orderRepository.getTotalRevenue());
         response.setTotalOrders(orderRepository.count());
         return response;
@@ -436,8 +464,6 @@ public List<CategoryAnalyticsResponse> getCategoryAnalytics() {
     @Override
     public GeographicReportResponse getGeographicReportByCountry(String country) {
         GeographicReportResponse response = new GeographicReportResponse();
-        // Implementation would require location data in orders
-        // This is a placeholder
         return response;
     }
 
@@ -471,21 +497,20 @@ public List<CategoryAnalyticsResponse> getCategoryAnalytics() {
 
     @Override
     public List<DashboardResponse.SalesByDayResponse> getSalesByMonth(int year) {
-        // Placeholder implementation
         return new ArrayList<>();
     }
 
     // ========== CUSTOMER ANALYTICS ==========
 
-   @Override
-public Long getNewCustomersCount(LocalDateTime startDate, LocalDateTime endDate) {
-    return userRepository.countByCreatedAtBetween(startDate, endDate);
-}
+    @Override
+    public Long getNewCustomersCount(LocalDateTime startDate, LocalDateTime endDate) {
+        return userRepository.countByCreatedAtBetween(startDate, endDate);
+    }
 
-@Override
-public Long getActiveCustomersCount(LocalDateTime startDate, LocalDateTime endDate) {
-    return userRepository.countActiveCustomersBetween(startDate, endDate);
-}
+    @Override
+    public Long getActiveCustomersCount(LocalDateTime startDate, LocalDateTime endDate) {
+        return userRepository.countActiveCustomersBetween(startDate, endDate);
+    }
 
     // ========== ORDER ANALYTICS ==========
 
@@ -510,25 +535,24 @@ public Long getActiveCustomersCount(LocalDateTime startDate, LocalDateTime endDa
 
     // ========== HELPER METHODS ==========
 
-private List<DashboardResponse.TopCategoryResponse> getTopCategories(int limit) {
-    
-    List<Object[]> results = orderRepository.findTopCategories();
-    List<DashboardResponse.TopCategoryResponse> responses = new ArrayList<>();
+    private List<DashboardResponse.TopCategoryResponse> getTopCategories(int limit) {
+        List<Object[]> results = orderRepository.findTopCategories();
+        List<DashboardResponse.TopCategoryResponse> responses = new ArrayList<>();
 
-    int count = 0;
-    for (Object[] row : results) {
-        if (count >= limit) break;
-        DashboardResponse.TopCategoryResponse response = new DashboardResponse.TopCategoryResponse();
-        response.setCategoryId((Long) row[0]);
-        response.setCategoryName((String) row[1]);
-        response.setRevenue((BigDecimal) row[2]);
-        response.setProductCount((Long) row[3]);
-        responses.add(response);
-        count++;
+        int count = 0;
+        for (Object[] row : results) {
+            if (count >= limit) break;
+            DashboardResponse.TopCategoryResponse response = new DashboardResponse.TopCategoryResponse();
+            response.setCategoryId((Long) row[0]);
+            response.setCategoryName((String) row[1]);
+            response.setRevenue((BigDecimal) row[2]);
+            response.setProductCount((Long) row[3]);
+            responses.add(response);
+            count++;
+        }
+
+        return responses;
     }
-
-    return responses;
-}
 
     private List<DashboardResponse.TopProductResponse> getTopSellingProductResponses(int limit) {
         List<Object[]> results = orderRepository.findTopSellingProducts(limit);
@@ -540,12 +564,20 @@ private List<DashboardResponse.TopCategoryResponse> getTopCategories(int limit) 
             response.setProductName((String) row[1]);
             response.setTotalSold(((Number) row[2]).longValue());
             response.setRevenue((BigDecimal) row[3]);
+            
+            // ✅ Set image URL for top product
+            try {
+                ImageResponse primaryImage = imageService.getPrimaryImage("product", (Long) row[0]);
+                if (primaryImage != null) {
+                    response.setImageUrl(primaryImage.getImageUrl());
+                }
+            } catch (Exception e) {
+                response.setImageUrl(null);
+            }
+            
             responses.add(response);
         }
 
         return responses;
     }
-    // ========== CUSTOMER ANALYTICS ==========
-
-
 }

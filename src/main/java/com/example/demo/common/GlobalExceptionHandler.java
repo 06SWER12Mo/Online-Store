@@ -1,5 +1,6 @@
 package com.example.demo.common;
 
+import com.example.demo.common.dtos.ErrorResponse;
 import com.example.demo.common.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

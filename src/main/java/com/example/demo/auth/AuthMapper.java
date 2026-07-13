@@ -1,9 +1,10 @@
 package com.example.demo.auth;
 
-import com.example.demo.user.User;
-import com.example.demo.user.UserRequest;
+import com.example.demo.auth.dtos.AuthResponse;
+import com.example.demo.auth.dtos.RegisterRequest;
+import com.example.demo.auth.dtos.UserProfileResponse;
 import com.example.demo.user.Role;
-import com.example.demo.user.RoleName;
+import com.example.demo.user.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +30,10 @@ public class AuthMapper {
         user.setEnabled(true);
         user.setLocked(false);
         user.setEmailVerified(false);
+        
+        // ✅ Default role is USER (simple enum, no entity!)
+        user.setRole(Role.USER);
+        
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         return user;

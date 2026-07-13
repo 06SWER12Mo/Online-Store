@@ -12,24 +12,21 @@ import java.util.Optional;
 @Repository
 public interface StoreSettingsRepository extends JpaRepository<StoreSettings, Long> {
 
-    Optional<StoreSettings> findFirstByOrderByIdAsc();
-
+    // Get the first (and only) settings record
     @Query("SELECT s FROM StoreSettings s WHERE s.id = (SELECT MIN(s2.id) FROM StoreSettings s2)")
     Optional<StoreSettings> findFirst();
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE StoreSettings s SET s.maintenanceMode = :maintenanceMode, s.maintenanceMessage = :message WHERE s.id = :id")
-    void updateMaintenanceMode(@Param("id") Long id, @Param("maintenanceMode") boolean maintenanceMode, @Param("message") String message);
-
-    @Modifying
-    @Transactional
-    @Query("UPDATE StoreSettings s SET s.updatedBy = :updatedBy WHERE s.id = :id")
-    void updateUpdatedBy(@Param("id") Long id, @Param("updatedBy") String updatedBy);
-
+    // Check if maintenance mode is enabled
     @Query("SELECT s.maintenanceMode FROM StoreSettings s WHERE s.id = (SELECT MIN(s2.id) FROM StoreSettings s2)")
     boolean getMaintenanceMode();
 
+    // Check if registration is allowed
     @Query("SELECT s.allowRegistration FROM StoreSettings s WHERE s.id = (SELECT MIN(s2.id) FROM StoreSettings s2)")
     boolean getAllowRegistration();
+
+    // Update maintenance mode
+    @Modifying
+    @Transactional
+    @Query("UPDATE StoreSettings s SET s.maintenanceMode = :enabled, s.maintenanceMessage = :message WHERE s.id = :id")
+    void updateMaintenanceMode(@Param("id") Long id, @Param("enabled") boolean enabled, @Param("message") String message);
 }

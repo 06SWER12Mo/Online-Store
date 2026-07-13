@@ -1,5 +1,10 @@
 package com.example.demo.user;
 
+import com.example.demo.image.ImageService;
+import com.example.demo.user.dtos.UserRequest;
+import com.example.demo.user.dtos.UserResponse;
+import com.example.demo.user.dtos.UserUpdateRequest;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -9,34 +14,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final AddressRepository addressRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    
+    // ✅ ImageService for avatar management
+    private final ImageService imageService;
 
     public UserServiceImpl(UserRepository userRepository,
-                           RoleRepository roleRepository,
-                           AddressRepository addressRepository,
                            PasswordEncoder passwordEncoder,
-                           UserMapper userMapper) {
+                           UserMapper userMapper,
+                           ImageService imageService) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.addressRepository = addressRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.imageService = imageService;
     }
 
     @Override
     public UserResponse registerUser(UserRequest request) {
-        // Check if email or username already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered: " + request.getEmail());
         }
@@ -46,10 +47,8 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toEntity(request);
         
-        // Assign default ROLE_USER
-        Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found"));
-        user.addRole(userRole);
+        // ✅ Default role is USER (ENUM, no repository needed)
+        user.setRole(Role.USER);
 
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
@@ -79,14 +78,12 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         User user = findUserById(id);
 
-        // Check if email is being changed and is not already taken
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new RuntimeException("Email already taken: " + request.getEmail());
             }
         }
 
-        // Check if username is being changed and is not already taken
         if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
             if (userRepository.existsByUsername(request.getUsername())) {
                 throw new RuntimeException("Username already taken: " + request.getUsername());
@@ -101,6 +98,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(Long id) {
         User user = findUserById(id);
+        
+        // ✅ Delete user avatar via ImageService
+        imageService.deleteAllImages("user", id);
+        
         userRepository.delete(user);
     }
 
@@ -136,70 +137,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public AddressResponse addAddress(Long userId, AddressRequest request) {
+    public void updateUserRole(Long userId, Role role) {
         User user = findUserById(userId);
-
-        // If this address is set as default, clear any existing default
-        if (request.isDefault()) {
-            addressRepository.clearDefaultAddress(userId);
-        }
-
-        Address address = userMapper.toAddressEntity(request, user);
-        Address savedAddress = addressRepository.save(address);
-        return new AddressResponse(savedAddress);
-    }
-
-    @Override
-    public AddressResponse updateAddress(Long userId, Long addressId, AddressRequest request) {
-        Address address = addressRepository.findByIdAndUserId(addressId, userId)
-                .orElseThrow(() -> new RuntimeException("Address not found with id: " + addressId));
-
-        // If this address is set as default, clear any existing default
-        if (request.isDefault()) {
-            addressRepository.clearDefaultAddress(userId);
-        }
-
-        userMapper.updateAddressEntity(address, request);
-        Address updatedAddress = addressRepository.save(address);
-        return new AddressResponse(updatedAddress);
-    }
-
-    @Override
-    public void deleteAddress(Long userId, Long addressId) {
-        addressRepository.deleteByIdAndUserId(addressId, userId);
-    }
-
-    @Override
-    public List<AddressResponse> getUserAddresses(Long userId) {
-        return addressRepository.findByUserId(userId)
-                .stream()
-                .map(AddressResponse::new)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public AddressResponse getDefaultAddress(Long userId) {
-        Address defaultAddress = addressRepository.findDefaultAddressByUserId(userId)
-                .orElse(null);
-        return defaultAddress != null ? new AddressResponse(defaultAddress) : null;
-    }
-
-    @Override
-    public void assignRoleToUser(Long userId, RoleName roleName) {
-        User user = findUserById(userId);
-        Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-
-        if (!user.getRoles().contains(role)) {
-            user.addRole(role);
-            userRepository.save(user);
-        }
-    }
-
-    @Override
-    public void removeRoleFromUser(Long userId, RoleName roleName) {
-        User user = findUserById(userId);
-        user.getRoles().removeIf(role -> role.getName().equals(roleName));
+        user.setRole(role);  // ✅ Simple ENUM, no repository needed
         userRepository.save(user);
     }
 
@@ -210,9 +150,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public long countActiveUsers() {
-        return userRepository.findAll().stream()
-                .filter(User::isEnabled)
-                .count();
+        return userRepository.countActiveUsers();
     }
 
     @Override

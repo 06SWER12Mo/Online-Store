@@ -1,20 +1,19 @@
 package com.example.demo.config;
 
+import java.util.List;
+
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springdoc.core.models.GroupedOpenApi;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
-import java.util.Map;
 
 @Configuration
 public class SwaggerConfig {
@@ -25,33 +24,28 @@ public class SwaggerConfig {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("E-Commerce API")
+                        .title("Online Store API")
                         .version("1.0")
                         .description("""
-                                Complete E-Commerce Backend API with JWT Security
-                                
-                                ## Test Credentials:
-                                - **Admin**: admin@store.com / password123
-                                - **Manager**: manager@store.com / password123
-                                - **User**: user@store.com / password123
-                                
+                                Complete Online Store Backend API with JWT Security
+                        
                                 ## How to Use:
-                                1. Login via `/api/auth/login` to get JWT token
+                                1. Login via `/api/auth/v1/login` to get JWT token
                                 2. Click Authorize button below
-                                3. Enter: `Bearer {your_token}`
-                                4. Now you can access protected endpoints
+                                3. Enter: `Bearer: {your_token}`
+                                4. Now you can access protected endpoints if you're authorized
                                 """)
                         .contact(new Contact()
-                                .name("Support Team")
-                                .email("support@store.com")
-                                .url("https://store.com"))
+                                .name("Muhammad Ayyad")
+                                .email("202303680@bethlehem.edu")
+                                .url("https://onlinestore.com"))
                         .license(new License()
                                 .name("Apache 2.0")
                                 .url("http://springdoc.org"))
                         .termsOfService("https://store.com/terms"))
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8080")
+                                .url("http://localhost:8081")
                                 .description("Local Development Server")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

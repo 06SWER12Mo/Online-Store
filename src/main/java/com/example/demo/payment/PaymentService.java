@@ -3,6 +3,10 @@ package com.example.demo.payment;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.demo.payment.dtos.PaymentRequest;
+import com.example.demo.payment.dtos.PaymentResponse;
+import com.example.demo.payment.dtos.RefundRequest;
+
 public interface PaymentService {
 
     PaymentResponse processPayment(PaymentRequest request);

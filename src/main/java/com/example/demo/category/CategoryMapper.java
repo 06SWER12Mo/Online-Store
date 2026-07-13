@@ -2,6 +2,9 @@ package com.example.demo.category;
 
 import org.springframework.stereotype.Component;
 
+import com.example.demo.category.dtos.CategoryRequest;
+import com.example.demo.category.dtos.CategoryResponse;
+
 import java.util.List;
 import java.util.stream.Collectors;
 

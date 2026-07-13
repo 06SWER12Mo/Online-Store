@@ -5,6 +5,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.demo.analytics.dtos.CategoryAnalyticsResponse;
+import com.example.demo.analytics.dtos.DashboardResponse;
+import com.example.demo.analytics.dtos.GeographicReportResponse;
+import com.example.demo.analytics.dtos.ProductAnalyticsResponse;
+import com.example.demo.analytics.dtos.SalesReportResponse;
+
 public interface AnalyticsService {
 
     // Dashboard

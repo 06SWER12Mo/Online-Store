@@ -10,10 +10,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.category.dtos.SubCategoryRequest;
+import com.example.demo.category.dtos.SubCategoryResponse;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/subcategories")
+@RequestMapping("/api/v1/subcategories")
+@Tag(name = "Sub Categories", description = "Endpoints for managing sub categories")
 public class SubCategoryController {
 
     private final SubCategoryService subCategoryService;

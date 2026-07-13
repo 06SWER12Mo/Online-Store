@@ -1,15 +1,14 @@
 package com.example.demo.order;
 
+import com.example.demo.user.User;
+import com.example.demo.location.Town;
+import com.example.demo.payment.Payment;
+import com.example.demo.payment.PaymentStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.example.demo.user.User;
-import com.example.demo.location.Town;
-import com.example.demo.payment.Payment;
-import com.example.demo.payment.PaymentStatus;
 
 @Entity
 @Table(name = "orders")
@@ -52,7 +51,6 @@ public class Order {
     private String shippingBuilding;
 
     private Double latitude;
-
     private Double longitude;
 
     @Column(nullable = false, precision = 19, scale = 2)
@@ -74,8 +72,15 @@ public class Order {
 
     private String trackingCode;
 
+    // ✅ ADD THIS FIELD
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -86,7 +91,17 @@ public class Order {
     // Constructors
     public Order() {}
 
-    // Getters and Setters
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // ========== GETTERS AND SETTERS ==========
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -144,17 +159,18 @@ public class Order {
     public String getTrackingCode() { return trackingCode; }
     public void setTrackingCode(String trackingCode) { this.trackingCode = trackingCode; }
 
+    public LocalDateTime getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
 
     public Payment getPayment() { return payment; }
     public void setPayment(Payment payment) { this.payment = payment; }
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

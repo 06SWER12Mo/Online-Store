@@ -1,5 +1,6 @@
 package com.example.demo.security;
 
+import com.example.demo.user.Role;
 import com.example.demo.user.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -7,67 +8,41 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class UserPrincipal implements UserDetails {
 
-    private final Long id;
-    private final String username;
-    private final String email;
-    private final String password;
-    private final boolean enabled;
-    private final boolean locked;
-    private final Collection<? extends GrantedAuthority> authorities;
+    private final User user;
 
-    public UserPrincipal(Long id, String username, String email, String password,
-                         boolean enabled, boolean locked,
-                         Collection<? extends GrantedAuthority> authorities) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.enabled = enabled;
-        this.locked = locked;
-        this.authorities = authorities;
+    public UserPrincipal(User user) {
+        this.user = user;
     }
 
     public static UserPrincipal create(User user) {
-        List<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName().name()))
-                .collect(Collectors.toList());
-
-        return new UserPrincipal(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPassword(),
-                user.isEnabled(),
-                user.isLocked(),
-                authorities
-        );
+        return new UserPrincipal(user);
     }
 
     public Long getId() {
-        return id;
+        return user.getId();
     }
 
     public String getEmail() {
-        return email;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
+        return user.getEmail();
     }
 
     @Override
     public String getUsername() {
-        return username;
+        return user.getUsername();
+    }
+
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // ✅ Simple role - single authority
+        return List.of(new SimpleGrantedAuthority(user.getRole().name()));
     }
 
     @Override
@@ -77,7 +52,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !locked;
+        return !user.isLocked();
     }
 
     @Override
@@ -87,6 +62,10 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return user.isEnabled();
+    }
+
+    public User getUser() {
+        return user;
     }
 }

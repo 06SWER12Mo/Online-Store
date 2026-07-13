@@ -1,6 +1,17 @@
 package com.example.demo.product;
 
 import com.example.demo.category.CategoryRepository;
+import com.example.demo.image.ImageService;
+import com.example.demo.image.dtos.ImageResponse;
+import com.example.demo.product.dtos.ProductRequest;
+import com.example.demo.product.dtos.ProductResponse;
+import com.example.demo.product.dtos.ProductSearchRequest;
+import com.example.demo.product.dtos.ProductSpecificationRequest;
+import com.example.demo.product.dtos.ProductSummaryResponse;
+import com.example.demo.product.dtos.ProductUpdateRequest;
+import com.example.demo.product.dtos.ProductVariantRequest;
+import com.example.demo.product.dtos.ProductVariantResponse;
+
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,45 +31,38 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductImageRepository productImageRepository;
     private final ProductSpecificationRepository productSpecificationRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductMapper productMapper;
     private final CategoryRepository categoryRepository;
+    
+    // ✅ ImageService for product images
+    private final ImageService imageService;
 
     public ProductServiceImpl(ProductRepository productRepository,
-                              ProductImageRepository productImageRepository,
                               ProductSpecificationRepository productSpecificationRepository,
                               ProductVariantRepository productVariantRepository,
                               ProductMapper productMapper,
-                              CategoryRepository categoryRepository) {
+                              CategoryRepository categoryRepository,
+                              ImageService imageService) {
         this.productRepository = productRepository;
-        this.productImageRepository = productImageRepository;
         this.productSpecificationRepository = productSpecificationRepository;
         this.productVariantRepository = productVariantRepository;
         this.productMapper = productMapper;
         this.categoryRepository = categoryRepository;
+        this.imageService = imageService;
     }
 
-    // ========== Basic CRUD ==========
+    // ========== BASIC CRUD ==========
 
     @Override
     public ProductResponse createProduct(ProductRequest request) {
-        // Check if SKU already exists
         if (productRepository.existsBySku(request.getSku())) {
             throw new RuntimeException("Product with SKU '" + request.getSku() + "' already exists");
         }
 
         Product product = productMapper.toEntity(request);
         Product savedProduct = productRepository.save(product);
-
-        // Handle images
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (ProductImageRequest imageRequest : request.getImages()) {
-                ProductImage image = productMapper.toImageEntity(imageRequest, savedProduct);
-                productImageRepository.save(image);
-            }
-        }
 
         // Handle specifications
         if (request.getSpecifications() != null && !request.getSpecifications().isEmpty()) {
@@ -71,7 +75,6 @@ public class ProductServiceImpl implements ProductService {
         // Handle variants
         if (request.getVariants() != null && !request.getVariants().isEmpty()) {
             for (ProductVariantRequest variantRequest : request.getVariants()) {
-                // Check if variant SKU already exists
                 if (productVariantRepository.existsBySku(variantRequest.getSku())) {
                     throw new RuntimeException("Variant with SKU '" + variantRequest.getSku() + "' already exists");
                 }
@@ -80,17 +83,21 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // Fetch complete product with all relations
         Product completeProduct = productRepository.findById(savedProduct.getId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        return productMapper.toResponse(completeProduct);
+        
+        ProductResponse response = productMapper.toResponse(completeProduct);
+        
+        // ✅ Load images from ImageService
+        loadProductImages(response, savedProduct.getId());
+        
+        return response;
     }
 
     @Override
     public ProductResponse updateProduct(Long id, ProductUpdateRequest request) {
         Product product = findProductById(id);
 
-        // Check if SKU is being changed and is not already taken
         if (request.getSku() != null && !request.getSku().equals(product.getSku())) {
             if (productRepository.existsBySkuAndIdNot(request.getSku(), id)) {
                 throw new RuntimeException("Product with SKU '" + request.getSku() + "' already exists");
@@ -100,24 +107,9 @@ public class ProductServiceImpl implements ProductService {
         productMapper.updateEntity(product, request);
         Product updatedProduct = productRepository.save(product);
 
-        // Update images if provided
-        if (request.getImages() != null) {
-            // Clear existing images
-            productImageRepository.deleteByProductId(id);
-
-            // Add new images
-            for (ProductImageRequest imageRequest : request.getImages()) {
-                ProductImage image = productMapper.toImageEntity(imageRequest, updatedProduct);
-                productImageRepository.save(image);
-            }
-        }
-
         // Update specifications if provided
         if (request.getSpecifications() != null) {
-            // Clear existing specifications
             productSpecificationRepository.deleteByProductId(id);
-
-            // Add new specifications
             for (ProductSpecificationRequest specRequest : request.getSpecifications()) {
                 ProductSpecification spec = productMapper.toSpecificationEntity(specRequest, updatedProduct);
                 productSpecificationRepository.save(spec);
@@ -126,12 +118,8 @@ public class ProductServiceImpl implements ProductService {
 
         // Update variants if provided
         if (request.getVariants() != null) {
-            // Clear existing variants
             productVariantRepository.deleteByProductId(id);
-
-            // Add new variants
             for (ProductVariantRequest variantRequest : request.getVariants()) {
-                // Check if variant SKU already exists
                 if (productVariantRepository.existsBySku(variantRequest.getSku())) {
                     throw new RuntimeException("Variant with SKU '" + variantRequest.getSku() + "' already exists");
                 }
@@ -140,21 +128,35 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        return productMapper.toResponse(updatedProduct);
+        ProductResponse response = productMapper.toResponse(updatedProduct);
+        
+        // ✅ Load images from ImageService
+        loadProductImages(response, id);
+        
+        return response;
     }
 
     @Override
     public void deleteProduct(Long id) {
         Product product = findProductById(id);
+        
+        // ✅ Delete all product images via ImageService
+        imageService.deleteAllImages("product", id);
+        
         productRepository.delete(product);
     }
 
     @Override
     public ProductResponse getProductById(Long id) {
         Product product = findProductById(id);
-        // Increment view count
         productRepository.incrementViewCount(id);
-        return productMapper.toResponse(product);
+        
+        ProductResponse response = productMapper.toResponse(product);
+        
+        // ✅ Load images from ImageService
+        loadProductImages(response, id);
+        
+        return response;
     }
 
     @Override
@@ -165,8 +167,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findAll(pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
     @Override
@@ -175,144 +181,199 @@ public class ProductServiceImpl implements ProductService {
                 .map(productMapper::toSummaryResponse);
     }
 
-    // ========== Search ==========
+    // ========== SEARCH ==========
 
     @Override
     public Page<ProductResponse> searchProducts(ProductSearchRequest searchRequest) {
-        // Build specification
         Specification<Product> spec = buildSpecification(searchRequest);
-
-        // Create sort
         Sort sort = createSort(searchRequest);
-
-        // Create pageable
         Pageable pageable = PageRequest.of(
                 searchRequest.getPage() != null ? searchRequest.getPage() : 0,
                 searchRequest.getSize() != null ? searchRequest.getSize() : 20,
                 sort
         );
 
-        return productRepository.findAll(spec, pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
     @Override
     public Page<ProductResponse> searchProducts(String keyword, Pageable pageable) {
-        return productRepository.searchProducts(keyword, pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.searchProducts(keyword, pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== Category based ==========
+    // ========== CATEGORY BASED ==========
 
     @Override
     public Page<ProductResponse> getProductsByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findByCategoryId(categoryId, pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findByCategoryId(categoryId, pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
     @Override
     public Page<ProductResponse> getActiveProductsByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findByCategoryIdAndActiveTrue(categoryId, pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== Featured products ==========
+    // ========== FEATURED PRODUCTS ==========
 
     @Override
     public List<ProductResponse> getFeaturedProducts() {
         return productRepository.findByFeaturedTrueAndActiveTrue()
                 .stream()
-                .map(productMapper::toResponse)
+                .map(product -> {
+                    ProductResponse response = productMapper.toResponse(product);
+                    loadProductImages(response, product.getId());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     public Page<ProductResponse> getFeaturedProducts(Pageable pageable) {
-        return productRepository.findByFeaturedTrueAndActiveTrue(pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findByFeaturedTrueAndActiveTrue(pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== In stock ==========
+    // ========== IN STOCK ==========
 
     @Override
     public Page<ProductResponse> getInStockProducts(Pageable pageable) {
-        return productRepository.findByInStockTrue(pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findByInStockTrue(pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== Low stock ==========
+    // ========== LOW STOCK ==========
 
     @Override
     public List<ProductResponse> getLowStockProducts() {
         return productRepository.findLowStockProducts()
                 .stream()
-                .map(productMapper::toResponse)
+                .map(product -> {
+                    ProductResponse response = productMapper.toResponse(product);
+                    loadProductImages(response, product.getId());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     public Page<ProductResponse> getLowStockProducts(Pageable pageable) {
-        return productRepository.findLowStockProducts(pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findLowStockProducts(pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== Price range ==========
+    // ========== PRICE RANGE ==========
 
     @Override
     public Page<ProductResponse> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        return productRepository.findByPriceBetween(minPrice, maxPrice, pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findByPriceBetween(minPrice, maxPrice, pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== Discounted products ==========
+    // ========== DISCOUNTED PRODUCTS ==========
 
     @Override
     public Page<ProductResponse> getDiscountedProducts(Pageable pageable) {
-        return productRepository.findProductsWithDiscount(pageable)
-                .map(productMapper::toResponse);
+        Page<Product> productPage = productRepository.findProductsWithDiscount(pageable);
+        return productPage.map(product -> {
+            ProductResponse response = productMapper.toResponse(product);
+            loadProductImages(response, product.getId());
+            return response;
+        });
     }
 
-    // ========== Top rated ==========
+    // ========== TOP RATED ==========
 
     @Override
     public List<ProductResponse> getTopRatedProducts(Pageable pageable) {
         return productRepository.findTopRatedProducts(pageable)
                 .stream()
-                .map(productMapper::toResponse)
+                .map(product -> {
+                    ProductResponse response = productMapper.toResponse(product);
+                    loadProductImages(response, product.getId());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
-    // ========== New arrivals ==========
+    // ========== NEW ARRIVALS ==========
 
     @Override
     public List<ProductResponse> getNewArrivals(Pageable pageable) {
         return productRepository.findNewestProducts(pageable)
                 .stream()
-                .map(productMapper::toResponse)
+                .map(product -> {
+                    ProductResponse response = productMapper.toResponse(product);
+                    loadProductImages(response, product.getId());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
-    // ========== Best sellers ==========
+    // ========== BEST SELLERS ==========
 
     @Override
     public List<ProductResponse> getBestSellers(Pageable pageable) {
         return productRepository.findBestSellingProducts(pageable)
                 .stream()
-                .map(productMapper::toResponse)
+                .map(product -> {
+                    ProductResponse response = productMapper.toResponse(product);
+                    loadProductImages(response, product.getId());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
-    // ========== Most viewed ==========
+    // ========== MOST VIEWED ==========
 
     @Override
     public List<ProductResponse> getMostViewed(Pageable pageable) {
         return productRepository.findMostViewedProducts(pageable)
                 .stream()
-                .map(productMapper::toResponse)
+                .map(product -> {
+                    ProductResponse response = productMapper.toResponse(product);
+                    loadProductImages(response, product.getId());
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
-    // ========== Stock management ==========
+    // ========== STOCK MANAGEMENT ==========
 
     @Override
     public void updateStock(Long productId, Integer quantity) {
@@ -332,7 +393,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.incrementStock(productId, quantity);
     }
 
-    // ========== Toggle status ==========
+    // ========== TOGGLE STATUS ==========
 
     @Override
     public void toggleActive(Long productId) {
@@ -348,63 +409,21 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
-    // ========== Increment view count ==========
+    // ========== INCREMENT VIEW COUNT ==========
 
     @Override
     public void incrementViewCount(Long productId) {
         productRepository.incrementViewCount(productId);
     }
 
-    // ========== Update rating ==========
+    // ========== UPDATE RATING ==========
 
     @Override
     public void updateRating(Long productId, Double averageRating, Integer totalReviews) {
         productRepository.updateRating(productId, averageRating, totalReviews);
     }
 
-    // ========== Image management ==========
-
-    @Override
-    public ProductImageResponse addProductImage(Long productId, ProductImageRequest request) {
-        Product product = findProductById(productId);
-
-        // If this image is set as primary, clear existing primary
-        if (request.getPrimary() != null && request.getPrimary()) {
-            productImageRepository.clearPrimaryImages(productId);
-        }
-
-        ProductImage image = productMapper.toImageEntity(request, product);
-        ProductImage savedImage = productImageRepository.save(image);
-        return productMapper.toImageResponse(savedImage);
-    }
-
-    @Override
-    public void removeProductImage(Long productId, Long imageId) {
-        ProductImage image = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found with id: " + imageId));
-
-        if (!image.getProduct().getId().equals(productId)) {
-            throw new RuntimeException("Image does not belong to this product");
-        }
-
-        productImageRepository.delete(image);
-    }
-
-    @Override
-    public void setPrimaryImage(Long productId, Long imageId) {
-        ProductImage image = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found with id: " + imageId));
-
-        if (!image.getProduct().getId().equals(productId)) {
-            throw new RuntimeException("Image does not belong to this product");
-        }
-
-        productImageRepository.clearPrimaryImages(productId);
-        image.setPrimary(true);
-        productImageRepository.save(image);
-    }
-
-    // ========== Specification management ==========
+    // ========== SPECIFICATION MANAGEMENT ==========
 
     @Override
     public void addSpecification(Long productId, ProductSpecificationRequest request) {
@@ -430,13 +449,12 @@ public class ProductServiceImpl implements ProductService {
         productSpecificationRepository.deleteById(specificationId);
     }
 
-    // ========== Variant management ==========
+    // ========== VARIANT MANAGEMENT ==========
 
     @Override
     public ProductVariantResponse addVariant(Long productId, ProductVariantRequest request) {
         Product product = findProductById(productId);
         
-        // Check if variant SKU already exists
         if (productVariantRepository.existsBySku(request.getSku())) {
             throw new RuntimeException("Variant with SKU '" + request.getSku() + "' already exists");
         }
@@ -448,39 +466,22 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductVariantResponse updateVariant(Long variantId, ProductVariantRequest request) {
-        // Find the variant directly from the repository
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new RuntimeException("Variant not found with id: " + variantId));
 
-        // Check if SKU is being changed and is not already taken
         if (request.getSku() != null && !request.getSku().equals(variant.getSku())) {
             if (productVariantRepository.existsBySkuAndIdNot(request.getSku(), variantId)) {
                 throw new RuntimeException("Variant with SKU '" + request.getSku() + "' already exists");
             }
         }
 
-        // Update variant fields
-        if (request.getName() != null) {
-            variant.setName(request.getName());
-        }
-        if (request.getSku() != null) {
-            variant.setSku(request.getSku());
-        }
-        if (request.getPrice() != null) {
-            variant.setPrice(request.getPrice());
-        }
-        if (request.getCompareAtPrice() != null) {
-            variant.setCompareAtPrice(request.getCompareAtPrice());
-        }
-        if (request.getStockQuantity() != null) {
-            variant.setStockQuantity(request.getStockQuantity());
-        }
-        if (request.getWeight() != null) {
-            variant.setWeight(request.getWeight());
-        }
-        if (request.getImageUrl() != null) {
-            variant.setImageUrl(request.getImageUrl());
-        }
+        if (request.getName() != null) variant.setName(request.getName());
+        if (request.getSku() != null) variant.setSku(request.getSku());
+        if (request.getPrice() != null) variant.setPrice(request.getPrice());
+        if (request.getCompareAtPrice() != null) variant.setCompareAtPrice(request.getCompareAtPrice());
+        if (request.getStockQuantity() != null) variant.setStockQuantity(request.getStockQuantity());
+        if (request.getWeight() != null) variant.setWeight(request.getWeight());
+        if (request.getImageUrl() != null) variant.setImageUrl(request.getImageUrl());
 
         ProductVariant updatedVariant = productVariantRepository.save(variant);
         return productMapper.toVariantResponse(updatedVariant);
@@ -491,10 +492,13 @@ public class ProductServiceImpl implements ProductService {
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new RuntimeException("Variant not found with id: " + variantId));
         
+        // ✅ Delete variant image via ImageService
+        imageService.deleteAllImages("variant", variantId);
+        
         productVariantRepository.delete(variant);
     }
 
-    // ========== Statistics ==========
+    // ========== STATISTICS ==========
 
     @Override
     public long countTotalProducts() {
@@ -511,42 +515,30 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.countByCategoryId(categoryId);
     }
 
-    // ========== Additional variant helper methods ==========
-
-    public List<ProductVariantResponse> getVariantsByProduct(Long productId) {
-        return productVariantRepository.findByProductId(productId)
-                .stream()
-                .map(productMapper::toVariantResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<ProductVariantResponse> getVariantsInStock(Long productId) {
-        return productVariantRepository.findByProductIdAndInStockTrue(productId)
-                .stream()
-                .map(productMapper::toVariantResponse)
-                .collect(Collectors.toList());
-    }
-
-    public void updateVariantStock(Long variantId, Integer quantity) {
-        productVariantRepository.updateStock(variantId, quantity);
-    }
-
-    public void decrementVariantStock(Long variantId, Integer quantity) {
-        int updated = productVariantRepository.decrementStock(variantId, quantity);
-        if (updated == 0) {
-            throw new RuntimeException("Insufficient stock for variant ID: " + variantId);
-        }
-    }
-
-    public void incrementVariantStock(Long variantId, Integer quantity) {
-        productVariantRepository.incrementStock(variantId, quantity);
-    }
-
-    // ========== Helper Methods ==========
+    // ========== HELPER METHODS ==========
 
     private Product findProductById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+    }
+
+    // ✅ Load images from ImageService
+    private void loadProductImages(ProductResponse response, Long productId) {
+        try {
+            List<ImageResponse> images = imageService.getProductImages(productId);
+            response.setImages(images);
+            
+            // Set primary image URL
+            ImageResponse primary = imageService.getPrimaryImage("product", productId);
+            if (primary != null) {
+                response.setPrimaryImageUrl(primary.getImageUrl());
+            } else if (!images.isEmpty()) {
+                response.setPrimaryImageUrl(images.get(0).getImageUrl());
+            }
+        } catch (Exception e) {
+            // If images fail to load, just continue without them
+            response.setImages(new ArrayList<>());
+        }
     }
 
     private Specification<Product> buildSpecification(ProductSearchRequest request) {
