@@ -99,24 +99,26 @@ public class StoreSettingsController {
         return ResponseEntity.ok(ApiResponse.success("Store settings updated successfully", response));
     }
 
-    // ========== ✅ STORE LOGO ==========
+    // ========== ✅ STORE LOGO - FIXED (URL auto-generated) ==========
 
-    @PostMapping("/logo")
+    @PostMapping(value = "/logo", consumes = "multipart/form-data")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<ImageResponse>> uploadLogo(
             @RequestParam("file") MultipartFile file) {
         
-        // ✅ Upload logo
+        String username = getCurrentUsername();
+        
+        // 1. Upload logo - ImageService handles file saving and URL generation
         ImageResponse response = imageService.uploadStoreLogo(file);
         
-        // ✅ Update settings with logo URL
-        StoreSettingsRequest request = new StoreSettingsRequest();
-        String logoUrl = response != null ? response.getImageUrl() : null;
-        request.setStoreLogo(logoUrl);
-        
-        // ✅ Only update if URL is not null
-        if (logoUrl != null) {
-            storeSettingsService.updateSettings(request, getCurrentUsername());
+        // 2. The URL is already generated in ImageService
+        //    We just need to save it to settings
+        if (response != null && response.getImageUrl() != null) {
+            // Update the store settings with the new logo URL
+            StoreSettings settings = storeSettingsService.getOrCreateSettings();
+            settings.setStoreLogo(response.getImageUrl());
+            settings.setUpdatedBy(username);
+            storeSettingsService.saveSettings(settings);
         }
         
         return ResponseEntity.ok(ApiResponse.success("Store logo uploaded successfully", response));
@@ -125,35 +127,40 @@ public class StoreSettingsController {
     @DeleteMapping("/logo")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteLogo() {
-        // ✅ Delete logo file
+        String username = getCurrentUsername();
+        
+        // 1. Delete the logo file
         imageService.deleteStoreLogo();
         
-        // ✅ Remove logo URL from settings
-        StoreSettingsRequest request = new StoreSettingsRequest();
-        request.setStoreLogo(null);
-        storeSettingsService.updateSettings(request, getCurrentUsername());
+        // 2. Remove logo URL from settings
+        StoreSettings settings = storeSettingsService.getOrCreateSettings();
+        settings.setStoreLogo(null);
+        settings.setUpdatedBy(username);
+        storeSettingsService.saveSettings(settings);
         
         return ResponseEntity.ok(ApiResponse.success("Store logo deleted successfully"));
     }
 
-    // ========== ✅ STORE FAVICON ==========
+    // ========== ✅ STORE FAVICON - FIXED (URL auto-generated) ==========
 
-    @PostMapping("/favicon")
+    @PostMapping(value = "/favicon", consumes = "multipart/form-data")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<ImageResponse>> uploadFavicon(
             @RequestParam("file") MultipartFile file) {
         
-        // ✅ Upload favicon
+        String username = getCurrentUsername();
+        
+        // 1. Upload favicon - ImageService handles file saving and URL generation
         ImageResponse response = imageService.uploadStoreFavicon(file);
         
-        // ✅ Update settings with favicon URL
-        StoreSettingsRequest request = new StoreSettingsRequest();
-        String faviconUrl = response != null ? response.getImageUrl() : null;
-        request.setStoreFavicon(faviconUrl);
-        
-        // ✅ Only update if URL is not null
-        if (faviconUrl != null) {
-            storeSettingsService.updateSettings(request, getCurrentUsername());
+        // 2. The URL is already generated in ImageService
+        //    We just need to save it to settings
+        if (response != null && response.getImageUrl() != null) {
+            // Update the store settings with the new favicon URL
+            StoreSettings settings = storeSettingsService.getOrCreateSettings();
+            settings.setStoreFavicon(response.getImageUrl());
+            settings.setUpdatedBy(username);
+            storeSettingsService.saveSettings(settings);
         }
         
         return ResponseEntity.ok(ApiResponse.success("Store favicon uploaded successfully", response));
@@ -162,13 +169,16 @@ public class StoreSettingsController {
     @DeleteMapping("/favicon")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteFavicon() {
-        // ✅ Delete favicon file
+        String username = getCurrentUsername();
+        
+        // 1. Delete the favicon file
         imageService.deleteStoreFavicon();
         
-        // ✅ Remove favicon URL from settings
-        StoreSettingsRequest request = new StoreSettingsRequest();
-        request.setStoreFavicon(null);
-        storeSettingsService.updateSettings(request, getCurrentUsername());
+        // 2. Remove favicon URL from settings
+        StoreSettings settings = storeSettingsService.getOrCreateSettings();
+        settings.setStoreFavicon(null);
+        settings.setUpdatedBy(username);
+        storeSettingsService.saveSettings(settings);
         
         return ResponseEntity.ok(ApiResponse.success("Store favicon deleted successfully"));
     }

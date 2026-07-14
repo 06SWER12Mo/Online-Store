@@ -10,7 +10,7 @@ import com.example.demo.order.TrackingStatus;
 public class TrackingResponse {
 
     private String orderNumber;
-    private String guestName;
+    private String userName;
     private String shippingName;
     private String shippingAddress;
     private BigDecimal totalPrice;
@@ -40,8 +40,8 @@ public class TrackingResponse {
     public String getOrderNumber() { return orderNumber; }
     public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }
 
-    public String getGuestName() { return guestName; }
-    public void setGuestName(String guestName) { this.guestName = guestName; }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
     public String getShippingName() { return shippingName; }
     public void setShippingName(String shippingName) { this.shippingName = shippingName; }

@@ -1,6 +1,8 @@
 package com.example.demo.payment;
 
 public enum PaymentMethod {
-    CashOnDelivery,
-    CreditCard
+    PAYPAL,
+    CREDIT_CARD,
+    BANK_TRANSFER,
+    
 }

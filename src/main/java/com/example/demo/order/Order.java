@@ -26,13 +26,13 @@ public class Order {
     private User user;
 
     @Column(nullable = false)
-    private String guestName;
+    private String userName;
 
     @Column(nullable = false)
-    private String guestEmail;
+    private String userEmail;
 
     @Column(nullable = false)
-    private String guestPhone;
+    private String userPhone;
 
     @Column(nullable = false)
     private String shippingName;
@@ -111,14 +111,14 @@ public class Order {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
-    public String getGuestName() { return guestName; }
-    public void setGuestName(String guestName) { this.guestName = guestName; }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
-    public String getGuestEmail() { return guestEmail; }
-    public void setGuestEmail(String guestEmail) { this.guestEmail = guestEmail; }
+    public String getUserEmail() { return userEmail; }
+    public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 
-    public String getGuestPhone() { return guestPhone; }
-    public void setGuestPhone(String guestPhone) { this.guestPhone = guestPhone; }
+    public String getUserPhone() { return userPhone; }
+    public void setUserPhone(String userPhone) { this.userPhone = userPhone; }
 
     public String getShippingName() { return shippingName; }
     public void setShippingName(String shippingName) { this.shippingName = shippingName; }

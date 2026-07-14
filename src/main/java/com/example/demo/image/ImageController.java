@@ -2,6 +2,7 @@ package com.example.demo.image;
 
 import com.example.demo.common.dtos.ApiResponse;
 import com.example.demo.image.dtos.ImageResponse;
+import com.example.demo.security.UserPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -197,14 +199,14 @@ public class ImageController {
         return ResponseEntity.ok(ApiResponse.success("Subcategory image uploaded successfully", response));
     }
 
-    // ========== USER AVATAR ==========
+    // ========== USER AVATAR (Admin only) ==========
 
     @PostMapping(value = "/users/{userId}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
-            summary = "Upload a user avatar",
-            description = "Uploads an avatar image for the given user. Requires USER role."
+            summary = "Upload a user avatar (Admin only)",
+            description = "Uploads an avatar image for the given user. Requires ADMIN role."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Avatar uploaded successfully",
@@ -222,6 +224,73 @@ public class ImageController {
         
         ImageResponse response = imageService.uploadUserAvatar(userId, file);
         return ResponseEntity.ok(ApiResponse.success("Avatar uploaded successfully", response));
+    }
+
+    // ========== CURRENT USER AVATAR (Self-service) ==========
+
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('USER') or hasRole('MANAGER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Upload/Update current user's avatar",
+            description = "Uploads or updates the avatar image for the currently authenticated user."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Avatar uploaded successfully",
+                    content = @Content(schema = @Schema(implementation = ImageResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file", content = @Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    public ResponseEntity<ApiResponse<ImageResponse>> uploadCurrentUserAvatar(
+            @Parameter(description = "Avatar image file", required = true)
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        ImageResponse response = imageService.uploadUserAvatar(userPrincipal.getId(), file);
+        return ResponseEntity.ok(ApiResponse.success("Avatar uploaded successfully", response));
+    }
+
+    @DeleteMapping("/me/avatar")
+    @PreAuthorize("hasRole('USER') or hasRole('MANAGER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Delete current user's avatar",
+            description = "Deletes the avatar for the currently authenticated user."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Avatar deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Avatar not found", content = @Content)
+    })
+    public ResponseEntity<ApiResponse<Void>> deleteCurrentUserAvatar(
+            Authentication authentication) {
+        
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        imageService.deleteAllImages("user", userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.success("Avatar deleted successfully"));
+    }
+
+    @GetMapping("/me/avatar")
+    @PreAuthorize("hasRole('USER') or hasRole('MANAGER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Get current user's avatar URL",
+            description = "Returns the avatar URL for the currently authenticated user."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Avatar retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    public ResponseEntity<ApiResponse<String>> getCurrentUserAvatar(
+            Authentication authentication) {
+        
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        String avatarUrl = imageService.getUserAvatarUrl(userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.success(avatarUrl));
     }
 
     // ========== DELETE ==========

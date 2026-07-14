@@ -22,6 +22,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByUserId(Long userId, Pageable pageable);
 
+    // ========== NEW METHODS FOR FILTERING BY STATUS ==========
+    
+    Page<Order> findByUserIdAndOrderStatus(Long userId, OrderStatus status, Pageable pageable);
+    
+    long countByUserId(Long userId);
+    
+    long countByUserIdAndOrderStatus(Long userId, OrderStatus status);
+    
+    List<Order> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
+    
+    List<Order> findTopNByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
     @Query("SELECT o FROM Order o WHERE o.orderStatus = :status")
     List<Order> findByOrderStatus(@Param("status") OrderStatus status);
 
@@ -78,7 +90,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            "WHERE p.category.id = :categoryId AND o.orderStatus = 'DELIVERED'")
     Long getTotalSoldByCategoryId(@Param("categoryId") Long categoryId);
 
-    // SIMPLIFIED: Get top categories by revenue
     @Query("SELECT c.id, c.name, SUM(o.totalPrice) as revenue, COUNT(p.id) as product_count " +
            "FROM Category c " +
            "LEFT JOIN Product p ON p.category.id = c.id " +

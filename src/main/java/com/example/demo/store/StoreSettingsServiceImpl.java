@@ -31,6 +31,7 @@ public class StoreSettingsServiceImpl implements StoreSettingsService {
         if (request.getStoreName() != null) settings.setStoreName(request.getStoreName());
         if (request.getStoreDescription() != null) settings.setStoreDescription(request.getStoreDescription());
         if (request.getStoreLogo() != null) settings.setStoreLogo(request.getStoreLogo());
+        if (request.getStoreFavicon() != null) settings.setStoreFavicon(request.getStoreFavicon());
 
         // Contact
         if (request.getContactEmail() != null) settings.setContactEmail(request.getContactEmail());
@@ -79,6 +80,29 @@ public class StoreSettingsServiceImpl implements StoreSettingsService {
         }
         storeSettingsRepository.save(settings);
     }
+
+    // ========== NEW METHODS ==========
+
+    @Override
+    public StoreSettings getOrCreateSettings() {
+        return storeSettingsRepository.findFirst()
+                .orElseGet(() -> {
+                    StoreSettings newSettings = new StoreSettings();
+                    newSettings.setStoreName("My Store");
+                    newSettings.setCurrencyCode("ILS");
+                    newSettings.setCurrencySymbol("₪");
+                    newSettings.setItemsPerPage(20);
+                    newSettings.setAllowRegistration(true);
+                    return storeSettingsRepository.save(newSettings);
+                });
+    }
+
+    @Override
+    public StoreSettings saveSettings(StoreSettings settings) {
+        return storeSettingsRepository.save(settings);
+    }
+
+    // ========== HELPER METHODS ==========
 
     @Override
     public boolean isMaintenanceMode() {
@@ -132,20 +156,5 @@ public class StoreSettingsServiceImpl implements StoreSettingsService {
     public int getItemsPerPage() {
         StoreSettings settings = getOrCreateSettings();
         return settings.getItemsPerPage() != null ? settings.getItemsPerPage() : 20;
-    }
-
-    // ====== PRIVATE HELPERS ======
-
-    private StoreSettings getOrCreateSettings() {
-        return storeSettingsRepository.findFirst()
-                .orElseGet(() -> {
-                    StoreSettings newSettings = new StoreSettings();
-                    newSettings.setStoreName("My Store");
-                    newSettings.setCurrencyCode("ILS");
-                    newSettings.setCurrencySymbol("₪");
-                    newSettings.setItemsPerPage(20);
-                    newSettings.setAllowRegistration(true);
-                    return storeSettingsRepository.save(newSettings);
-                });
     }
 }

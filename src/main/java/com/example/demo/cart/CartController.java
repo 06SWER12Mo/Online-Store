@@ -4,7 +4,9 @@ import com.example.demo.cart.dtos.AddToCartRequest;
 import com.example.demo.cart.dtos.CartResponse;
 import com.example.demo.cart.dtos.UpdateCartItemRequest;
 import com.example.demo.common.dtos.ApiResponse;
+import com.example.demo.security.UserPrincipal;
 import com.example.demo.user.User;
+import com.example.demo.user.UserRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,10 +29,14 @@ public class CartController {
 
     private final CartService cartService;
     private final CartMapper cartMapper;
+    private final UserRepository userRepository;
 
-    public CartController(CartService cartService, CartMapper cartMapper) {
+    public CartController(CartService cartService, 
+                          CartMapper cartMapper,
+                          UserRepository userRepository) {
         this.cartService = cartService;
         this.cartMapper = cartMapper;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/add")
@@ -48,7 +54,11 @@ public class CartController {
     })
     public ResponseEntity<ApiResponse<CartResponse>> addToCart(
             @Valid @RequestBody AddToCartRequest request,
-            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        // ✅ Get User from UserPrincipal
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Cart cart = cartService.addProductToCart(user, request.getProductId(), request.getQuantity());
         return ResponseEntity.ok(ApiResponse.success("Product added to cart", cartMapper.toResponse(cart)));
@@ -69,7 +79,11 @@ public class CartController {
     })
     public ResponseEntity<ApiResponse<CartResponse>> updateCartItem(
             @Valid @RequestBody UpdateCartItemRequest request,
-            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        // ✅ Get User from UserPrincipal
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Cart cart = cartService.updateItemQuantity(user, request.getProductId(), request.getQuantity());
         return ResponseEntity.ok(ApiResponse.success("Cart updated", cartMapper.toResponse(cart)));
@@ -90,7 +104,11 @@ public class CartController {
     public ResponseEntity<ApiResponse<CartResponse>> removeFromCart(
             @Parameter(description = "ID of the product to remove", required = true)
             @PathVariable Long productId,
-            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        // ✅ Get User from UserPrincipal
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Cart cart = cartService.removeProductFromCart(user, productId);
         return ResponseEntity.ok(ApiResponse.success("Product removed from cart", cartMapper.toResponse(cart)));
@@ -108,7 +126,12 @@ public class CartController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
     })
     public ResponseEntity<ApiResponse<CartResponse>> getCart(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        // ✅ Get User from UserPrincipal
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Cart cart = cartService.getCart(user);
         return ResponseEntity.ok(ApiResponse.success(cartMapper.toResponse(cart)));
     }
@@ -124,7 +147,12 @@ public class CartController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
     })
     public ResponseEntity<ApiResponse<Void>> clearCart(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        // ✅ Get User from UserPrincipal
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         cartService.clearCart(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Cart cleared successfully"));
     }
@@ -161,7 +189,12 @@ public class CartController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
     })
     public ResponseEntity<ApiResponse<Integer>> getCartItemCount(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        // ✅ Get User from UserPrincipal
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Cart cart = cartService.getCart(user);
         return ResponseEntity.ok(ApiResponse.success(cart.getTotalItems()));
     }

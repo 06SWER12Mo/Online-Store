@@ -27,7 +27,7 @@ public class PaymentMapper {
         if (request == null) return null;
 
         Payment payment = new Payment();
-        payment.setAmount(request.getAmount());
+        // Amount will be set from the order in the service
         payment.setMethod(request.getPaymentMethod());
         payment.setStatus(PaymentStatus.PENDING);
 

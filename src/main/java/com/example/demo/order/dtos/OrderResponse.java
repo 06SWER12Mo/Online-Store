@@ -12,9 +12,9 @@ public class OrderResponse {
     private Long id;
     private String orderNumber;
     private Long userId;
-    private String guestName;
-    private String guestEmail;
-    private String guestPhone;
+    private String userName;
+    private String userEmail;
+    private String userPhone;
     private String shippingName;
     private String shippingPhone;
     private String shippingTownName;
@@ -70,14 +70,14 @@ public class OrderResponse {
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
-    public String getGuestName() { return guestName; }
-    public void setGuestName(String guestName) { this.guestName = guestName; }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
-    public String getGuestEmail() { return guestEmail; }
-    public void setGuestEmail(String guestEmail) { this.guestEmail = guestEmail; }
+    public String getUserEmail() { return userEmail; }
+    public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 
-    public String getGuestPhone() { return guestPhone; }
-    public void setGuestPhone(String guestPhone) { this.guestPhone = guestPhone; }
+    public String getUserPhone() { return userPhone; }
+    public void setUserPhone(String userPhone) { this.userPhone = userPhone; }
 
     public String getShippingName() { return shippingName; }
     public void setShippingName(String shippingName) { this.shippingName = shippingName; }

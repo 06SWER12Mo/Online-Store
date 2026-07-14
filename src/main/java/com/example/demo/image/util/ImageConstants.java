@@ -22,7 +22,7 @@ public final class ImageConstants {
     // ========== URL PATHS ==========
     public static final String IMAGE_URL_PREFIX = "/api/images/";
     
-    // ========== ✅ DEFAULT IMAGES ==========
+    // ========== DEFAULT IMAGES ==========
     public static final String DEFAULT_PRODUCT_IMAGE = "/images/default-product.png";
     public static final String DEFAULT_USER_AVATAR = "/images/default-avatar.png";
     public static final String DEFAULT_CATEGORY_IMAGE = "/images/default-category.png";

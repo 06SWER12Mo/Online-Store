@@ -10,7 +10,7 @@ public class OrderSummaryResponse {
 
     private Long id;
     private String orderNumber;
-    private String guestName;
+    private String userName;
     private BigDecimal totalPrice;
     private PaymentStatus paymentStatus;
     private OrderStatus orderStatus;
@@ -25,8 +25,8 @@ public class OrderSummaryResponse {
     public String getOrderNumber() { return orderNumber; }
     public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }
 
-    public String getGuestName() { return guestName; }
-    public void setGuestName(String guestName) { this.guestName = guestName; }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }

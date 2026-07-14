@@ -4,6 +4,7 @@ import com.example.demo.common.dtos.ApiResponse;
 import com.example.demo.inventory.dtos.InventoryReportResponse;
 import com.example.demo.inventory.dtos.InventoryTransactionResponse;
 import com.example.demo.inventory.dtos.StockAdjustmentRequest;
+import com.example.demo.security.UserPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +20,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -154,11 +157,11 @@ public class InventoryController {
         return ResponseEntity.ok(ApiResponse.success(inventoryService.getTransactionsByReferenceId(referenceId)));
     }
 
-    // ========== STOCK ADJUSTMENT ==========
+    // ========== STOCK ADJUSTMENT - FIXED ==========
 
     @PostMapping("/adjust")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'INVENTORY_MANAGER')")
-    @Operation(summary = "Adjust stock", description = "Creates a stock adjustment transaction (e.g. restock, damage, correction) for a product.")
+    @Operation(summary = "Adjust stock", description = "Creates a stock adjustment transaction for a product. Use positive adjustmentDelta to add stock, negative to remove stock.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Stock adjusted successfully",
                     content = @Content(schema = @Schema(implementation = InventoryTransactionResponse.class))),
@@ -168,9 +171,11 @@ public class InventoryController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Product not found", content = @Content)
     })
     public ResponseEntity<ApiResponse<InventoryTransactionResponse>> adjustStock(
-            @Valid @RequestBody StockAdjustmentRequest request,
-            @Parameter(description = "ID of the user performing the adjustment", required = true)
-            @RequestParam Long adjustedByUserId) {
+            @Valid @RequestBody StockAdjustmentRequest request) {
+        
+        // ✅ Get the current authenticated user from SecurityContext
+        Long adjustedByUserId = getCurrentUserId();
+        
         InventoryTransactionResponse response = inventoryService.adjustStock(request, adjustedByUserId);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success("Stock adjusted successfully", response));
@@ -350,5 +355,21 @@ public class InventoryController {
     })
     public ResponseEntity<ApiResponse<Integer>> getTotalReturnedStock() {
         return ResponseEntity.ok(ApiResponse.success(inventoryService.getTotalReturnedStock()));
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserPrincipal) {
+            return ((UserPrincipal) principal).getId();
+        }
+        
+        throw new RuntimeException("Unable to get current user ID");
     }
 }

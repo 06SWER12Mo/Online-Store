@@ -25,6 +25,9 @@ public class StoreSettings {
     @Column(name = "store_logo", length = 255)
     private String storeLogo;
 
+    @Column(name = "store_favicon", length = 255)  // ✅ ADD THIS FIELD
+    private String storeFavicon;
+
     // ====== CONTACT INFO ======
     @Column(name = "contact_email", length = 100)
     private String contactEmail;
@@ -102,6 +105,9 @@ public class StoreSettings {
 
     public String getStoreLogo() { return storeLogo; }
     public void setStoreLogo(String storeLogo) { this.storeLogo = storeLogo; }
+
+    public String getStoreFavicon() { return storeFavicon; }  // ✅ ADD THIS
+    public void setStoreFavicon(String storeFavicon) { this.storeFavicon = storeFavicon; }  // ✅ ADD THIS
 
     public String getContactEmail() { return contactEmail; }
     public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }

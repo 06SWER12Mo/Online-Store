@@ -155,7 +155,7 @@ public class InventoryServiceImpl implements InventoryService {
             inventoryTransactionRepository.findByReferenceId(referenceId));
     }
 
-    // ========== STOCK ADJUSTMENT ==========
+    // ========== STOCK ADJUSTMENT - FIXED ==========
 
     @Override
     public InventoryTransactionResponse adjustStock(StockAdjustmentRequest request, Long adjustedByUserId) {
@@ -165,9 +165,19 @@ public class InventoryServiceImpl implements InventoryService {
         User adjustedBy = userRepository.findById(adjustedByUserId)
             .orElseThrow(() -> ResourceNotFoundException.userById(adjustedByUserId));
 
+        // ✅ adjustmentDelta is the CHANGE to apply (positive = add, negative = remove)
+        Integer adjustmentDelta = request.getAdjustmentDelta();
         Integer previousQuantity = product.getStockQuantity();
-        Integer newQuantity = request.getNewQuantity();
-        Integer adjustmentQuantity = newQuantity - previousQuantity;
+        Integer newQuantity = previousQuantity + adjustmentDelta;
+        
+        // Don't allow negative stock
+        if (newQuantity < 0) {
+            throw new RuntimeException(
+                "Cannot adjust stock. Current quantity: " + previousQuantity + 
+                ", Adjustment: " + adjustmentDelta + 
+                " would result in negative stock: " + newQuantity
+            );
+        }
 
         // Update product stock
         product.setStockQuantity(newQuantity);
@@ -179,20 +189,20 @@ public class InventoryServiceImpl implements InventoryService {
         adjustment.setProduct(product);
         adjustment.setPreviousQuantity(previousQuantity);
         adjustment.setNewQuantity(newQuantity);
-        adjustment.setAdjustmentQuantity(adjustmentQuantity);
+        adjustment.setAdjustmentQuantity(adjustmentDelta);
         adjustment.setReason(request.getReason());
         adjustment.setAdjustedBy(adjustedBy);
         stockAdjustmentRepository.save(adjustment);
 
-        // ✅ CREATE INVENTORY TRANSACTION - passes the adjustment quantity
+        // ✅ CREATE INVENTORY TRANSACTION - passes the adjustment delta
         createInventoryTransaction(
             product.getId(),
             InventoryTransactionType.ADJUSTMENT,
-            adjustmentQuantity, // Pass the actual change (positive or negative)
+            adjustmentDelta, // Pass the actual change (positive or negative)
             adjustment.getId(),
             adjustedByUserId,
             "Stock adjusted from " + previousQuantity + " to " + newQuantity + 
-            ". Reason: " + request.getReason()
+            " (delta: " + adjustmentDelta + "). Reason: " + request.getReason()
         );
 
         // Get the created transaction
@@ -231,7 +241,7 @@ public class InventoryServiceImpl implements InventoryService {
         report.setCurrentStockValue(
             product.getPrice().multiply(BigDecimal.valueOf(product.getStockQuantity())));
 
-        // ✅ Calculate totals by transaction type
+        // Calculate totals by transaction type
         report.setTotalReceived(
             inventoryTransactionRepository.sumQuantityByProductAndType(productId, InventoryTransactionType.RECEIVED_STOCK));
         report.setTotalSold(

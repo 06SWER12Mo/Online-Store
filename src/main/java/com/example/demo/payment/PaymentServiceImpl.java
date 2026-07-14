@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import java.math.BigDecimal;
+
 @Service
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
@@ -49,23 +51,48 @@ public class PaymentServiceImpl implements PaymentService {
             throw new RuntimeException("Order is already paid");
         }
 
-        // 3. Create payment record
+        // 3. Check if order is in a valid state for payment
+        if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new RuntimeException("Order is not in PENDING_PAYMENT status. Current status: " + order.getOrderStatus());
+        }
+
+        // 4. Validate that the order has items
+        if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
+            throw new RuntimeException("Order has no items to pay for");
+        }
+
+        // 5. Get the amount from the order (not from the request)
+        BigDecimal amount = order.getTotalPrice();
+        
+        // 6. Validate amount is positive
+        if (amount == null || amount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Invalid order total amount: " + amount);
+        }
+
+        // 7. Create payment record
         Payment payment = paymentMapper.toPaymentEntity(request);
         payment.setOrder(order);
+        payment.setAmount(amount); // Set amount from order
         
         // ✅ MOCK: Always successful
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());
         Payment savedPayment = paymentRepository.save(payment);
 
-        // 4. Update order
+        // 8. Update order
         order.setPaymentStatus(PaymentStatus.PAID);
         order.setOrderStatus(OrderStatus.PAID);
         orderRepository.save(order);
 
-        // 5. ✅ TRIGGER SHIPPING!
-        orderService.markOrderReadyForShipping(order.getId());
-        System.out.println("📢 Order " + order.getOrderNumber() + " paid and ready for shipping!");
+        // 9. ✅ TRIGGER SHIPPING!
+        try {
+            orderService.markOrderReadyForShipping(order.getId());
+            System.out.println("📢 Order " + order.getOrderNumber() + " paid and ready for shipping!");
+        } catch (Exception e) {
+            // Log the error but don't fail the payment
+            System.err.println("⚠️ Failed to mark order ready for shipping: " + e.getMessage());
+            // You might want to handle this differently based on your requirements
+        }
 
         return paymentMapper.toPaymentResponse(savedPayment);
     }
@@ -77,31 +104,80 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByTransactionReference(transactionReference)
             .orElseThrow(() -> new RuntimeException("Payment not found with reference: " + transactionReference));
 
-        // ✅ MOCK: Already confirmed during processPayment
-        return paymentMapper.toPaymentResponse(payment);
+        // Check if payment is already confirmed
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            return paymentMapper.toPaymentResponse(payment);
+        }
+
+        // If payment is pending, confirm it
+        if (payment.getStatus() == PaymentStatus.PENDING) {
+            payment.setStatus(PaymentStatus.PAID);
+            payment.setPaidAt(LocalDateTime.now());
+            Payment savedPayment = paymentRepository.save(payment);
+            
+            // Update the order
+            Order order = payment.getOrder();
+            if (order != null) {
+                order.setPaymentStatus(PaymentStatus.PAID);
+                order.setOrderStatus(OrderStatus.PAID);
+                orderRepository.save(order);
+                
+                // Trigger shipping
+                try {
+                    orderService.markOrderReadyForShipping(order.getId());
+                    System.out.println("📢 Order " + order.getOrderNumber() + " confirmed and ready for shipping!");
+                } catch (Exception e) {
+                    System.err.println("⚠️ Failed to mark order ready for shipping: " + e.getMessage());
+                }
+            }
+            
+            return paymentMapper.toPaymentResponse(savedPayment);
+        }
+
+        throw new RuntimeException("Payment cannot be confirmed in its current state: " + payment.getStatus());
     }
 
-    // ========== ✅ REFUND PAYMENT (MOCK - Just updates status) ==========
+    // ========== ✅ REFUND PAYMENT ==========
 
     @Override
     public PaymentResponse refundPayment(RefundRequest request) {
+        // 1. Find the payment
         Payment payment = paymentRepository.findByTransactionReference(request.getTransactionReference())
             .orElseThrow(() -> new RuntimeException("Payment not found with reference: " + request.getTransactionReference()));
 
+        // 2. Validate payment can be refunded
         if (payment.getStatus() != PaymentStatus.PAID) {
-            throw new RuntimeException("Only paid payments can be refunded");
+            throw new RuntimeException("Only paid payments can be refunded. Current status: " + payment.getStatus());
         }
 
-        payment.setStatus(PaymentStatus.REFUNDED);
+        // 3. Check if payment is too old to refund (optional - e.g., 30 days limit)
+        if (payment.getPaidAt() != null && 
+            payment.getPaidAt().isBefore(LocalDateTime.now().minusDays(30))) {
+            throw new RuntimeException("Payment is older than 30 days and cannot be refunded");
+        }
 
+        // 4. Update payment status
+        payment.setStatus(PaymentStatus.REFUNDED);
+        Payment savedPayment = paymentRepository.save(payment);
+
+        // 5. Update the associated order
         Order order = payment.getOrder();
         if (order != null) {
+            // Check if order can be cancelled
+            if (!order.getOrderStatus().canBeCancelled()) {
+                throw new RuntimeException("Order cannot be cancelled in its current status: " + order.getOrderStatus());
+            }
+            
             order.setPaymentStatus(PaymentStatus.REFUNDED);
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
+            
+            System.out.println("🔄 Order " + order.getOrderNumber() + " cancelled due to refund");
         }
 
-        Payment savedPayment = paymentRepository.save(payment);
+        System.out.println("💰 Payment refunded: " + payment.getTransactionReference() + 
+                          " - Reason: " + (request.getReason() != null ? request.getReason() : "No reason provided"));
+        
         return paymentMapper.toPaymentResponse(savedPayment);
     }
 
@@ -143,5 +219,67 @@ public class PaymentServiceImpl implements PaymentService {
             .filter(p -> p.getStatus() == status)
             .map(paymentMapper::toPaymentResponse)
             .collect(Collectors.toList());
+    }
+
+    // ========== ADDITIONAL HELPER METHODS (Optional but useful) ==========
+
+    /**
+     * Get payment statistics
+     */
+    @Transactional(readOnly = true)
+    public PaymentStatistics getPaymentStatistics() {
+        List<Payment> allPayments = paymentRepository.findAll();
+        
+        long totalPayments = allPayments.size();
+        long paidPayments = allPayments.stream().filter(p -> p.getStatus() == PaymentStatus.PAID).count();
+        long pendingPayments = allPayments.stream().filter(p -> p.getStatus() == PaymentStatus.PENDING).count();
+        long refundedPayments = allPayments.stream().filter(p -> p.getStatus() == PaymentStatus.REFUNDED).count();
+        long failedPayments = allPayments.stream().filter(p -> p.getStatus() == PaymentStatus.FAILED).count();
+        
+        java.math.BigDecimal totalRevenue = allPayments.stream()
+            .filter(p -> p.getStatus() == PaymentStatus.PAID)
+            .map(Payment::getAmount)
+            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        
+        return new PaymentStatistics(totalPayments, paidPayments, pendingPayments, 
+                                    refundedPayments, failedPayments, totalRevenue);
+    }
+
+    /**
+     * Check if payment exists by transaction reference
+     */
+    @Transactional(readOnly = true)
+    public boolean paymentExists(String transactionReference) {
+        return paymentRepository.existsByTransactionReference(transactionReference);
+    }
+
+    /**
+     * Inner class for payment statistics
+     */
+    public static class PaymentStatistics {
+        private final long totalPayments;
+        private final long paidPayments;
+        private final long pendingPayments;
+        private final long refundedPayments;
+        private final long failedPayments;
+        private final java.math.BigDecimal totalRevenue;
+
+        public PaymentStatistics(long totalPayments, long paidPayments, long pendingPayments,
+                                 long refundedPayments, long failedPayments, java.math.BigDecimal totalRevenue) {
+            this.totalPayments = totalPayments;
+            this.paidPayments = paidPayments;
+            this.pendingPayments = pendingPayments;
+            this.refundedPayments = refundedPayments;
+            this.failedPayments = failedPayments;
+            this.totalRevenue = totalRevenue;
+        }
+
+        // Getters
+        public long getTotalPayments() { return totalPayments; }
+        public long getPaidPayments() { return paidPayments; }
+        public long getPendingPayments() { return pendingPayments; }
+        public long getRefundedPayments() { return refundedPayments; }
+        public long getFailedPayments() { return failedPayments; }
+        public java.math.BigDecimal getTotalRevenue() { return totalRevenue; }
     }
 }

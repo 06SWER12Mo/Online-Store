@@ -20,7 +20,7 @@ public interface ImageService {
 
     ImageResponse uploadUserAvatar(Long userId, MultipartFile file);
 
-    // ========== ✅ STORE IMAGES ==========
+    // ========== STORE IMAGES ==========
     
     ImageResponse uploadStoreLogo(MultipartFile file);
     
@@ -51,6 +51,14 @@ public interface ImageService {
     // ========== UPDATE METHODS ==========
 
     void setPrimaryImage(String entityType, Long entityId, Long imageId);
+
+    // ========== USER AVATAR HELPER METHODS ==========
+
+    String getUserAvatarUrl(Long userId);
+    
+    void updateUserAvatar(Long userId, String imageUrl);
+    
+    void clearUserAvatar(Long userId);
 
     // ========== HELPER METHODS ==========
 

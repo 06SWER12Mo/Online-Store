@@ -6,6 +6,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.image.dtos.ImageResponse;
 import com.example.demo.image.util.ImageConstants;
+import com.example.demo.user.User;
+import com.example.demo.user.UserRepository;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,10 +23,14 @@ public class ImageServiceImpl implements ImageService {
 
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
+    private final UserRepository userRepository;
 
-    public ImageServiceImpl(ImageRepository imageRepository, ImageMapper imageMapper) {
+    public ImageServiceImpl(ImageRepository imageRepository, 
+                           ImageMapper imageMapper,
+                           UserRepository userRepository) {
         this.imageRepository = imageRepository;
         this.imageMapper = imageMapper;
+        this.userRepository = userRepository;
     }
 
     // ========== UPLOAD METHODS ==========
@@ -154,7 +160,8 @@ public class ImageServiceImpl implements ImageService {
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "users/" + userId + "/" + fileName;
         
-        imageRepository.deleteByEntityTypeAndEntityId("user", userId);
+        // Delete old avatar from database and filesystem
+        deleteAllImages("user", userId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
@@ -170,10 +177,14 @@ public class ImageServiceImpl implements ImageService {
         );
         
         ImageEntity saved = imageRepository.save(entity);
+        
+        // Update user's profile picture URL
+        updateUserAvatar(userId, imageUrl);
+        
         return imageMapper.toResponse(saved);
     }
 
-    // ========== ✅ STORE IMAGES ==========
+    // ========== STORE IMAGES ==========
 
     @Override
     public ImageResponse uploadStoreLogo(MultipartFile file) {
@@ -183,7 +194,7 @@ public class ImageServiceImpl implements ImageService {
         deleteStoreLogo();
         
         String folderPath = getStoreFolderPath();
-        String fileName = ImageConstants.STORE_LOGO;
+        String fileName = "logo.png";
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "store/" + fileName;
@@ -213,7 +224,14 @@ public class ImageServiceImpl implements ImageService {
         deleteStoreFavicon();
         
         String folderPath = getStoreFolderPath();
-        String fileName = ImageConstants.STORE_FAVICON;
+        String fileName = "favicon.ico";
+        
+        // Handle favicon file types
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.equals("image/x-icon")) {
+            // If not ICO, save as PNG
+            fileName = "favicon.png";
+        }
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "store/" + fileName;
@@ -314,6 +332,11 @@ public class ImageServiceImpl implements ImageService {
         }
         
         imageRepository.deleteByEntityTypeAndEntityId(entityType, entityId);
+        
+        // If deleting user avatar, clear the profile picture URL
+        if ("user".equalsIgnoreCase(entityType)) {
+            clearUserAvatar(entityId);
+        }
     }
 
     // ========== UPDATE METHODS ==========
@@ -330,6 +353,41 @@ public class ImageServiceImpl implements ImageService {
         imageRepository.clearPrimaryImages(entityType, entityId);
         entity.setPrimary(true);
         imageRepository.save(entity);
+    }
+
+    // ========== USER AVATAR HELPER METHODS ==========
+
+    @Override
+    public String getUserAvatarUrl(Long userId) {
+        List<ImageEntity> avatars = imageRepository.findByEntityTypeAndEntityIdAndImageType("user", userId, "AVATAR");
+        if (!avatars.isEmpty()) {
+            return avatars.get(0).getImageUrl();
+        }
+        return getDefaultImage("user");
+    }
+
+    @Override
+    public void updateUserAvatar(Long userId, String imageUrl) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            user.setProfilePictureUrl(imageUrl);
+            userRepository.save(user);
+        } catch (Exception e) {
+            System.err.println("Failed to update user profile picture: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void clearUserAvatar(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            user.setProfilePictureUrl(null);
+            userRepository.save(user);
+        } catch (Exception e) {
+            System.err.println("Failed to clear user profile picture: " + e.getMessage());
+        }
     }
 
     // ========== HELPER METHODS ==========
@@ -358,8 +416,17 @@ public class ImageServiceImpl implements ImageService {
         }
         
         String contentType = file.getContentType();
-        if (!Arrays.asList(ImageConstants.ALLOWED_MIME_TYPES).contains(contentType)) {
-            throw new RuntimeException("File type not allowed: " + contentType);
+        boolean isValidType = false;
+        for (String allowedType : ImageConstants.ALLOWED_MIME_TYPES) {
+            if (allowedType.equals(contentType)) {
+                isValidType = true;
+                break;
+            }
+        }
+        
+        if (!isValidType) {
+            throw new RuntimeException("File type not allowed: " + contentType + 
+                                     ". Allowed types: " + String.join(", ", ImageConstants.ALLOWED_MIME_TYPES));
         }
     }
 
@@ -396,9 +463,9 @@ public class ImageServiceImpl implements ImageService {
 
     private String generateFileName(String entityType, Long entityId, String imageType, Integer displayOrder) {
         if ("product".equalsIgnoreCase(entityType)) {
-            if (ImageConstants.IMAGE_TYPE_MAIN.equalsIgnoreCase(imageType)) {
+            if ("MAIN".equalsIgnoreCase(imageType)) {
                 return "main.jpg";
-            } else if (ImageConstants.IMAGE_TYPE_THUMBNAIL.equalsIgnoreCase(imageType)) {
+            } else if ("THUMBNAIL".equalsIgnoreCase(imageType)) {
                 return "thumbnail.jpg";
             } else {
                 int order = displayOrder != null ? displayOrder : 0;

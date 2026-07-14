@@ -17,6 +17,10 @@ public interface StoreSettingsService {
     // Toggle maintenance mode
     void toggleMaintenanceMode(boolean enabled, String message);
 
+    // NEW METHODS FOR DIRECT SETTINGS UPDATE
+    StoreSettings getOrCreateSettings();
+    StoreSettings saveSettings(StoreSettings settings);
+
     // Helper methods for other services
     boolean isMaintenanceMode();
     boolean isRegistrationAllowed();

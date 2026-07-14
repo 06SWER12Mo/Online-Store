@@ -8,8 +8,8 @@ public class StockAdjustmentRequest {
     @NotNull(message = "Product ID is required")
     private Long productId;
 
-    @NotNull(message = "New quantity is required")
-    private Integer newQuantity;
+    @NotNull(message = "Adjustment amount is required")
+    private Integer adjustmentDelta;  // Positive = add stock, Negative = remove stock
 
     @NotBlank(message = "Reason is required")
     private String reason;
@@ -21,8 +21,8 @@ public class StockAdjustmentRequest {
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
 
-    public Integer getNewQuantity() { return newQuantity; }
-    public void setNewQuantity(Integer newQuantity) { this.newQuantity = newQuantity; }
+    public Integer getAdjustmentDelta() { return adjustmentDelta; }
+    public void setAdjustmentDelta(Integer adjustmentDelta) { this.adjustmentDelta = adjustmentDelta; }
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }

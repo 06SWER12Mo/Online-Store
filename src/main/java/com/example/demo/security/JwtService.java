@@ -27,11 +27,13 @@ public class JwtService {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-        // ✅ Simple role - just get the role name
+        // Role claim mirrors whatever UserPrincipal grants (now "ROLE_" + name,
+        // e.g. "ROLE_ADMIN") so JwtAuthenticationFilter can reuse it directly
+        // without re-adding the prefix.
         String role = userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .findFirst()
-                .orElse("USER");
+                .orElse("ROLE_USER");
 
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 

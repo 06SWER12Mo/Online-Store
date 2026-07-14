@@ -7,8 +7,8 @@ public class StoreSettingsRequest {
     // ====== STORE BASIC INFO ======
     private String storeName;
     private String storeDescription;
-    private String storeLogo;      
-    private String storeFavicon;   
+    private String storeLogo;      // URL to logo image
+    private String storeFavicon;   // URL to favicon image
 
     // ====== CONTACT INFO ======
     private String contactEmail;
@@ -68,7 +68,7 @@ public class StoreSettingsRequest {
     public StoreSettingsRequest() {}
 
     // ============================================================
-    // ✅ GETTERS AND SETTERS (ALL FIELDS)
+    // GETTERS AND SETTERS (ALL FIELDS)
     // ============================================================
 
     // ---- STORE INFO ----
@@ -78,7 +78,6 @@ public class StoreSettingsRequest {
     public String getStoreDescription() { return storeDescription; }
     public void setStoreDescription(String storeDescription) { this.storeDescription = storeDescription; }
 
-    // ✅ ADD THESE TWO METHODS!
     public String getStoreLogo() { return storeLogo; }
     public void setStoreLogo(String storeLogo) { this.storeLogo = storeLogo; }
 
