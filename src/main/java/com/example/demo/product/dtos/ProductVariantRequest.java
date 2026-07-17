@@ -19,7 +19,6 @@ public class ProductVariantRequest {
     private BigDecimal compareAtPrice;
     private Integer stockQuantity = 0;
     private Double weight;
-    private String imageUrl;
 
     // Constructors
     public ProductVariantRequest() {}
@@ -71,13 +70,5 @@ public class ProductVariantRequest {
 
     public void setWeight(Double weight) {
         this.weight = weight;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 }

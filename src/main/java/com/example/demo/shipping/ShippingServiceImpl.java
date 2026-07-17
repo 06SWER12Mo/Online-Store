@@ -169,7 +169,7 @@ public class ShippingServiceImpl implements ShippingService {
         return shippingMapper.toShippingBatchResponse(savedBatch);
     }
 
-    // ========== ✅ BUS ASSIGNMENT - AUTO ==========
+    // ========== BUS ASSIGNMENT - AUTO ==========
 
     @Override
     public ShippingBatchResponse autoAssignBus(Long batchId) {

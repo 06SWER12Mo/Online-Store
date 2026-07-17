@@ -29,7 +29,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/inventory")
-@Tag(name = "Inventory", description = "Endpoints for inventory transactions, stock adjustments, reports, stock levels, and statistics. All endpoints require ADMIN, MANAGER, or INVENTORY_MANAGER role.")
+@Tag(name = "Inventory Checking and Adjustments", description = "Endpoints for inventory transactions, stock adjustments, reports, stock levels, and statistics. All endpoints require ADMIN, MANAGER, or INVENTORY_MANAGER role.")
 @SecurityRequirement(name = "bearerAuth")
 public class InventoryController {
 

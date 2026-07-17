@@ -15,7 +15,7 @@ public class CategoryMapper {
         Category category = new Category();
         category.setName(request.getName());
         category.setDescription(request.getDescription());
-        category.setImageUrl(request.getImageUrl());
+        // ❌ DO NOT set imageUrl here - it will be set by ImageService
         category.setActive(request.getActive() != null ? request.getActive() : true);
         category.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
         category.setParentCategory(parentCategory);
@@ -29,9 +29,7 @@ public class CategoryMapper {
         if (request.getDescription() != null) {
             category.setDescription(request.getDescription());
         }
-        if (request.getImageUrl() != null) {
-            category.setImageUrl(request.getImageUrl());
-        }
+        // ❌ DO NOT update imageUrl here - it's managed by ImageService
         if (request.getActive() != null) {
             category.setActive(request.getActive());
         }

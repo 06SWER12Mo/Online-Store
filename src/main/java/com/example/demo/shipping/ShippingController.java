@@ -1,4 +1,4 @@
-package com.example.demo.shipping;
+/*package com.example.demo.shipping;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -327,8 +327,11 @@ public class ShippingController {
         description = "Retrieves all batches that are ready for dispatch but not yet dispatched"
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved pending dispatches")
-    @GetMapping("/scheduler/pending-dispatches")
+   @GetMapping("/scheduler/pending-dispatches")
     public ResponseEntity<List<ShippingBatchResponse>> getPendingDispatches() {
         return ResponseEntity.ok(batchSchedulerService.getPendingDispatches());
     }
 }
+
+
+*/

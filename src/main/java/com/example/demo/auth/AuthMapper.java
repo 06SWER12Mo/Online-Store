@@ -31,7 +31,6 @@ public class AuthMapper {
         user.setLocked(false);
         user.setEmailVerified(false);
         
-        // ✅ Default role is USER (simple enum, no entity!)
         user.setRole(Role.USER);
         
         user.setCreatedAt(LocalDateTime.now());

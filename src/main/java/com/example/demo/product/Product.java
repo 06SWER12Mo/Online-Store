@@ -52,6 +52,7 @@ public class Product {
 
     private Double weight;
     private Double length;
+    
     private Double width;
     private Double height;
 

@@ -11,7 +11,7 @@ public class CategoryResponse {
     private Long id;
     private String name;
     private String description;
-    private String imageUrl;
+    private String imageUrl;  
     private boolean active;
     private Integer displayOrder;
     private Long parentId;
@@ -28,7 +28,7 @@ public class CategoryResponse {
         this.id = category.getId();
         this.name = category.getName();
         this.description = category.getDescription();
-        this.imageUrl = category.getImageUrl();
+        this.imageUrl = category.getImageUrl();  // ✅ Set from entity
         this.active = category.isActive();
         this.displayOrder = category.getDisplayOrder();
         this.createdAt = category.getCreatedAt();
@@ -46,99 +46,39 @@ public class CategoryResponse {
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public String getDescription() {
-        return description;
-    }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public Integer getDisplayOrder() { return displayOrder; }
+    public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
+    public Long getParentId() { return parentId; }
+    public void setParentId(Long parentId) { this.parentId = parentId; }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+    public String getParentName() { return parentName; }
+    public void setParentName(String parentName) { this.parentName = parentName; }
 
-    public boolean isActive() {
-        return active;
-    }
+    public List<CategoryResponse> getSubCategories() { return subCategories; }
+    public void setSubCategories(List<CategoryResponse> subCategories) { this.subCategories = subCategories; }
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+    public int getSubCategoryCount() { return subCategoryCount; }
+    public void setSubCategoryCount(int subCategoryCount) { this.subCategoryCount = subCategoryCount; }
 
-    public Integer getDisplayOrder() {
-        return displayOrder;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setDisplayOrder(Integer displayOrder) {
-        this.displayOrder = displayOrder;
-    }
-
-    public Long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
-    public String getParentName() {
-        return parentName;
-    }
-
-    public void setParentName(String parentName) {
-        this.parentName = parentName;
-    }
-
-    public List<CategoryResponse> getSubCategories() {
-        return subCategories;
-    }
-
-    public void setSubCategories(List<CategoryResponse> subCategories) {
-        this.subCategories = subCategories;
-    }
-
-    public int getSubCategoryCount() {
-        return subCategoryCount;
-    }
-
-    public void setSubCategoryCount(int subCategoryCount) {
-        this.subCategoryCount = subCategoryCount;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

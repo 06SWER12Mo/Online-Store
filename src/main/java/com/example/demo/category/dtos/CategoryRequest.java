@@ -12,13 +12,8 @@ public class CategoryRequest {
     @Size(max = 500, message = "Description must not exceed 500 characters")
     private String description;
 
-    @Size(max = 200, message = "Image URL must not exceed 200 characters")
-    private String imageUrl;
-
     private Boolean active = true;
-
     private Integer displayOrder = 0;
-
     private Long parentId;
 
     // Constructors
@@ -39,14 +34,6 @@ public class CategoryRequest {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 
     public Boolean getActive() {

@@ -35,8 +35,6 @@ public class ProductServiceImpl implements ProductService {
     private final ProductVariantRepository productVariantRepository;
     private final ProductMapper productMapper;
     private final CategoryRepository categoryRepository;
-    
-    // ✅ ImageService for product images
     private final ImageService imageService;
 
     public ProductServiceImpl(ProductRepository productRepository,
@@ -79,6 +77,7 @@ public class ProductServiceImpl implements ProductService {
                     throw new RuntimeException("Variant with SKU '" + variantRequest.getSku() + "' already exists");
                 }
                 ProductVariant variant = productMapper.toVariantEntity(variantRequest, savedProduct);
+                // ❌ imageUrl is NOT set here - will be set when image is uploaded
                 productVariantRepository.save(variant);
             }
         }
@@ -88,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
         
         ProductResponse response = productMapper.toResponse(completeProduct);
         
-        // ✅ Load images from ImageService
+        // Load images from ImageService
         loadProductImages(response, savedProduct.getId());
         
         return response;
@@ -118,19 +117,23 @@ public class ProductServiceImpl implements ProductService {
 
         // Update variants if provided
         if (request.getVariants() != null) {
+            // Delete old variants
             productVariantRepository.deleteByProductId(id);
+            
+            // Create new variants
             for (ProductVariantRequest variantRequest : request.getVariants()) {
                 if (productVariantRepository.existsBySku(variantRequest.getSku())) {
                     throw new RuntimeException("Variant with SKU '" + variantRequest.getSku() + "' already exists");
                 }
                 ProductVariant variant = productMapper.toVariantEntity(variantRequest, updatedProduct);
+                // ❌ imageUrl is NOT set here - will be set when image is uploaded
                 productVariantRepository.save(variant);
             }
         }
 
         ProductResponse response = productMapper.toResponse(updatedProduct);
         
-        // ✅ Load images from ImageService
+        // Load images from ImageService
         loadProductImages(response, id);
         
         return response;
@@ -140,7 +143,7 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(Long id) {
         Product product = findProductById(id);
         
-        // ✅ Delete all product images via ImageService
+        // Delete all product images via ImageService
         imageService.deleteAllImages("product", id);
         
         productRepository.delete(product);
@@ -153,7 +156,7 @@ public class ProductServiceImpl implements ProductService {
         
         ProductResponse response = productMapper.toResponse(product);
         
-        // ✅ Load images from ImageService
+        // Load images from ImageService
         loadProductImages(response, id);
         
         return response;
@@ -162,7 +165,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductSummaryResponse getProductSummaryById(Long id) {
         Product product = findProductById(id);
-        return productMapper.toSummaryResponse(product);
+        ProductSummaryResponse response = productMapper.toSummaryResponse(product);
+        
+        // Load primary image from ImageService
+        ImageResponse primaryImage = imageService.getPrimaryImage("product", id);
+        if (primaryImage != null) {
+            response.setPrimaryImageUrl(primaryImage.getImageUrl());
+        }
+        
+        return response;
     }
 
     @Override
@@ -178,7 +189,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<ProductSummaryResponse> getAllProductSummaries(Pageable pageable) {
         return productRepository.findAll(pageable)
-                .map(productMapper::toSummaryResponse);
+                .map(product -> {
+                    ProductSummaryResponse response = productMapper.toSummaryResponse(product);
+                    // Load primary image
+                    ImageResponse primaryImage = imageService.getPrimaryImage("product", product.getId());
+                    if (primaryImage != null) {
+                        response.setPrimaryImageUrl(primaryImage.getImageUrl());
+                    }
+                    return response;
+                });
     }
 
     // ========== SEARCH ==========
@@ -460,6 +479,7 @@ public class ProductServiceImpl implements ProductService {
         }
         
         ProductVariant variant = productMapper.toVariantEntity(request, product);
+        // ❌ imageUrl is NOT set here - will be set when image is uploaded
         ProductVariant savedVariant = productVariantRepository.save(variant);
         return productMapper.toVariantResponse(savedVariant);
     }
@@ -475,14 +495,9 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        if (request.getName() != null) variant.setName(request.getName());
-        if (request.getSku() != null) variant.setSku(request.getSku());
-        if (request.getPrice() != null) variant.setPrice(request.getPrice());
-        if (request.getCompareAtPrice() != null) variant.setCompareAtPrice(request.getCompareAtPrice());
-        if (request.getStockQuantity() != null) variant.setStockQuantity(request.getStockQuantity());
-        if (request.getWeight() != null) variant.setWeight(request.getWeight());
-        if (request.getImageUrl() != null) variant.setImageUrl(request.getImageUrl());
-
+        // Update variant fields (excluding imageUrl)
+        productMapper.updateVariantEntity(variant, request);
+        
         ProductVariant updatedVariant = productVariantRepository.save(variant);
         return productMapper.toVariantResponse(updatedVariant);
     }
@@ -492,7 +507,7 @@ public class ProductServiceImpl implements ProductService {
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new RuntimeException("Variant not found with id: " + variantId));
         
-        // ✅ Delete variant image via ImageService
+        // Delete variant image via ImageService
         imageService.deleteAllImages("variant", variantId);
         
         productVariantRepository.delete(variant);
@@ -522,7 +537,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
-    // ✅ Load images from ImageService
+    // Load images from ImageService
     private void loadProductImages(ProductResponse response, Long productId) {
         try {
             List<ImageResponse> images = imageService.getProductImages(productId);

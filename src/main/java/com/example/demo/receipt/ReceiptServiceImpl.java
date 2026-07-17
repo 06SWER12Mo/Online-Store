@@ -95,12 +95,6 @@ public class ReceiptServiceImpl implements ReceiptService {
                 ReceiptItem item = receiptMapper.toItemEntity(itemRequest, savedReceipt);
                 savedReceipt.addItem(item);
 
-                // ✅ UPDATE PRODUCT STOCK
-                int newStock = product.getStockQuantity() + itemRequest.getQuantity();
-                product.setStockQuantity(newStock);
-                product.setInStock(newStock > 0);
-                productRepository.save(product);
-
                 // ✅ CREATE INVENTORY TRANSACTION - NO REFERENCE TYPE NEEDED!
                 inventoryService.createInventoryTransaction(
                     product.getId(),                                    // Product ID
@@ -208,10 +202,6 @@ public class ReceiptServiceImpl implements ReceiptService {
         if ("APPROVED".equals(receipt.getStatus())) {
             for (ReceiptItem item : receipt.getItems()) {
                 Product product = item.getProduct();
-                int newStock = product.getStockQuantity() - item.getQuantity();
-                product.setStockQuantity(Math.max(0, newStock));
-                product.setInStock(newStock > 0);
-                productRepository.save(product);
                 
                 // ✅ REVERSE INVENTORY TRANSACTION - NO REFERENCE TYPE NEEDED!
                 inventoryService.createInventoryTransaction(

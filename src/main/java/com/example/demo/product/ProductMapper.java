@@ -168,6 +168,12 @@ public class ProductMapper {
         return new ProductSpecificationResponse(specification);
     }
 
+    public List<ProductSpecificationResponse> toSpecificationResponseList(List<ProductSpecification> specifications) {
+        return specifications.stream()
+                .map(this::toSpecificationResponse)
+                .collect(Collectors.toList());
+    }
+
     // ========== VARIANT MAPPING ==========
 
     public ProductVariant toVariantEntity(ProductVariantRequest request, Product product) {
@@ -178,9 +184,31 @@ public class ProductMapper {
         variant.setCompareAtPrice(request.getCompareAtPrice());
         variant.setStockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0);
         variant.setWeight(request.getWeight());
-        variant.setImageUrl(request.getImageUrl());
+        // ❌ DO NOT set imageUrl here - will be set by ImageService
         variant.setProduct(product);
         return variant;
+    }
+
+    public void updateVariantEntity(ProductVariant variant, ProductVariantRequest request) {
+        if (request.getName() != null) {
+            variant.setName(request.getName());
+        }
+        if (request.getSku() != null) {
+            variant.setSku(request.getSku());
+        }
+        if (request.getPrice() != null) {
+            variant.setPrice(request.getPrice());
+        }
+        if (request.getCompareAtPrice() != null) {
+            variant.setCompareAtPrice(request.getCompareAtPrice());
+        }
+        if (request.getStockQuantity() != null) {
+            variant.setStockQuantity(request.getStockQuantity());
+        }
+        if (request.getWeight() != null) {
+            variant.setWeight(request.getWeight());
+        }
+        // ❌ DO NOT update imageUrl here - managed by ImageService
     }
 
     public ProductVariantResponse toVariantResponse(ProductVariant variant) {

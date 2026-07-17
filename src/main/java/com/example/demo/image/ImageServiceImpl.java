@@ -4,8 +4,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.demo.category.Category;
+import com.example.demo.category.CategoryRepository;
 import com.example.demo.image.dtos.ImageResponse;
 import com.example.demo.image.util.ImageConstants;
+import com.example.demo.product.ProductVariant;
+import com.example.demo.product.ProductVariantRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 
@@ -14,7 +18,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -24,13 +27,19 @@ public class ImageServiceImpl implements ImageService {
     private final ImageRepository imageRepository;
     private final ImageMapper imageMapper;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;  
+    private final ProductVariantRepository productVariantRepository;  
 
     public ImageServiceImpl(ImageRepository imageRepository, 
                            ImageMapper imageMapper,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           CategoryRepository categoryRepository,
+                           ProductVariantRepository productVariantRepository) {
         this.imageRepository = imageRepository;
         this.imageMapper = imageMapper;
         this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+        this.productVariantRepository = productVariantRepository;
     }
 
     // ========== UPLOAD METHODS ==========
@@ -79,6 +88,8 @@ public class ImageServiceImpl implements ImageService {
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "product-variants/" + variantId + "/" + fileName;
         
+        deleteAllImages("variant", variantId);
+        
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
             fileName,
@@ -93,6 +104,10 @@ public class ImageServiceImpl implements ImageService {
         );
         
         ImageEntity saved = imageRepository.save(entity);
+        
+        // ✅ Update the variant's imageUrl in the database
+        updateVariantImageUrl(variantId, imageUrl);
+        
         return imageMapper.toResponse(saved);
     }
 
@@ -105,6 +120,8 @@ public class ImageServiceImpl implements ImageService {
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "categories/" + categoryId + "/" + fileName;
+        
+        deleteAllImages("category", categoryId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
@@ -120,6 +137,9 @@ public class ImageServiceImpl implements ImageService {
         );
         
         ImageEntity saved = imageRepository.save(entity);
+        
+        updateCategoryImageUrl(categoryId, imageUrl);
+        
         return imageMapper.toResponse(saved);
     }
 
@@ -132,6 +152,8 @@ public class ImageServiceImpl implements ImageService {
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "subcategories/" + subcategoryId + "/" + fileName;
+        
+        deleteAllImages("subcategory", subcategoryId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
@@ -147,6 +169,9 @@ public class ImageServiceImpl implements ImageService {
         );
         
         ImageEntity saved = imageRepository.save(entity);
+        
+        updateCategoryImageUrl(subcategoryId, imageUrl);
+        
         return imageMapper.toResponse(saved);
     }
 
@@ -190,7 +215,6 @@ public class ImageServiceImpl implements ImageService {
     public ImageResponse uploadStoreLogo(MultipartFile file) {
         validateFile(file);
         
-        // Delete old logo
         deleteStoreLogo();
         
         String folderPath = getStoreFolderPath();
@@ -220,16 +244,13 @@ public class ImageServiceImpl implements ImageService {
     public ImageResponse uploadStoreFavicon(MultipartFile file) {
         validateFile(file);
         
-        // Delete old favicon
         deleteStoreFavicon();
         
         String folderPath = getStoreFolderPath();
         String fileName = "favicon.ico";
         
-        // Handle favicon file types
         String contentType = file.getContentType();
         if (contentType != null && !contentType.equals("image/x-icon")) {
-            // If not ICO, save as PNG
             fileName = "favicon.png";
         }
         
@@ -321,6 +342,14 @@ public class ImageServiceImpl implements ImageService {
         
         deletePhysicalFile(entity.getImageUrl());
         imageRepository.delete(entity);
+        
+        // Check if any images remain for this entity
+        long count = imageRepository.countByEntityTypeAndEntityId(entity.getEntityType(), entity.getEntityId());
+        
+        // If no images remain, clear the imageUrl in the entity
+        if (count == 0) {
+            clearEntityImageUrl(entity.getEntityType(), entity.getEntityId());
+        }
     }
 
     @Override
@@ -333,10 +362,8 @@ public class ImageServiceImpl implements ImageService {
         
         imageRepository.deleteByEntityTypeAndEntityId(entityType, entityId);
         
-        // If deleting user avatar, clear the profile picture URL
-        if ("user".equalsIgnoreCase(entityType)) {
-            clearUserAvatar(entityId);
-        }
+        // Clear the imageUrl in the entity
+        clearEntityImageUrl(entityType, entityId);
     }
 
     // ========== UPDATE METHODS ==========
@@ -390,6 +417,66 @@ public class ImageServiceImpl implements ImageService {
         }
     }
 
+    // ========== ENTITY IMAGE URL UPDATE METHODS ==========
+
+    private void updateCategoryImageUrl(Long categoryId, String imageUrl) {
+        try {
+            Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
+            category.setImageUrl(imageUrl);
+            categoryRepository.save(category);
+        } catch (Exception e) {
+            System.err.println("Failed to update category image URL: " + e.getMessage());
+        }
+    }
+
+    private void updateVariantImageUrl(Long variantId, String imageUrl) {
+        try {
+            ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new RuntimeException("Variant not found with id: " + variantId));
+            variant.setImageUrl(imageUrl);
+            productVariantRepository.save(variant);
+        } catch (Exception e) {
+            System.err.println("Failed to update variant image URL: " + e.getMessage());
+        }
+    }
+
+    private void clearEntityImageUrl(String entityType, Long entityId) {
+        try {
+            switch (entityType.toLowerCase()) {
+                case "category":
+                    Category category = categoryRepository.findById(entityId).orElse(null);
+                    if (category != null) {
+                        category.setImageUrl(null);
+                        categoryRepository.save(category);
+                    }
+                    break;
+                case "subcategory":
+                    Category subCategory = categoryRepository.findById(entityId).orElse(null);
+                    if (subCategory != null) {
+                        subCategory.setImageUrl(null);
+                        categoryRepository.save(subCategory);
+                    }
+                    break;
+                case "variant":
+                    ProductVariant variant = productVariantRepository.findById(entityId).orElse(null);
+                    if (variant != null) {
+                        variant.setImageUrl(null);
+                        productVariantRepository.save(variant);
+                    }
+                    break;
+                case "user":
+                    clearUserAvatar(entityId);
+                    break;
+                default:
+                    // Do nothing for other entity types
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to clear entity image URL: " + e.getMessage());
+        }
+    }
+
     // ========== HELPER METHODS ==========
 
     @Override
@@ -398,6 +485,7 @@ public class ImageServiceImpl implements ImageService {
             case "product": return ImageConstants.DEFAULT_PRODUCT_IMAGE;
             case "user": return ImageConstants.DEFAULT_USER_AVATAR;
             case "category": return ImageConstants.DEFAULT_CATEGORY_IMAGE;
+            case "subcategory": return ImageConstants.DEFAULT_SUBCATEGORY_IMAGE;
             case "variant": return ImageConstants.DEFAULT_VARIANT_IMAGE;
             case "store": return ImageConstants.DEFAULT_STORE_LOGO;
             default: return "/images/default.png";
@@ -472,7 +560,7 @@ public class ImageServiceImpl implements ImageService {
                 return "gallery_" + order + ".jpg";
             }
         }
-        return imageType + ".jpg";
+        return "image.jpg";
     }
 
     private void deletePhysicalFile(String imageUrl) {

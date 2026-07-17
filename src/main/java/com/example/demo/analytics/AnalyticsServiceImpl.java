@@ -1,15 +1,22 @@
 package com.example.demo.analytics;
 
+import com.example.demo.analytics.dtos.CategoryAnalyticsResponse;
+import com.example.demo.analytics.dtos.DashboardResponse;
+import com.example.demo.analytics.dtos.GeographicReportResponse;
+import com.example.demo.analytics.dtos.ProductAnalyticsResponse;
+import com.example.demo.analytics.dtos.SalesReportResponse;
 import com.example.demo.category.Category;
 import com.example.demo.category.CategoryRepository;
 import com.example.demo.image.ImageService;
 import com.example.demo.image.dtos.ImageResponse;
 import com.example.demo.order.Order;
 import com.example.demo.order.OrderRepository;
+import com.example.demo.order.OrderStatus;
 import com.example.demo.product.Product;
 import com.example.demo.product.ProductRepository;
 import com.example.demo.review.ReviewRepository;
 import com.example.demo.user.UserRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,12 +28,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.example.demo.analytics.dtos.CategoryAnalyticsResponse;
-import com.example.demo.analytics.dtos.DashboardResponse;
-import com.example.demo.analytics.dtos.GeographicReportResponse;
-import com.example.demo.analytics.dtos.ProductAnalyticsResponse;
-import com.example.demo.analytics.dtos.SalesReportResponse;
-
 @Service
 public class AnalyticsServiceImpl implements AnalyticsService {
 
@@ -35,8 +36,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
-    
-    // ✅ ImageService for product images
     private final ImageService imageService;
 
     public AnalyticsServiceImpl(OrderRepository orderRepository,
@@ -69,6 +68,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         response.setTotalProducts(productRepository.count());
         response.setTotalCustomers(userRepository.count());
         response.setTotalCategories(categoryRepository.count());
+        response.setTotalReviews(reviewRepository.count());
 
         // Revenue metrics
         BigDecimal totalRevenue = orderRepository.getTotalRevenue();
@@ -91,12 +91,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             response.setAverageOrderValue(BigDecimal.ZERO);
         }
 
-        // Order status distribution
-        response.setPendingOrders(orderRepository.countByStatus("PENDING_PAYMENT"));
-        response.setProcessingOrders(orderRepository.countByStatus("PAID"));
-        response.setShippedOrders(orderRepository.countByStatus("SHIPPED"));
-        response.setDeliveredOrders(orderRepository.countByStatus("DELIVERED"));
-        response.setCancelledOrders(orderRepository.countByStatus("CANCELLED"));
+        response.setPendingOrders(orderRepository.countByStatus(OrderStatus.PENDING_PAYMENT));
+        response.setProcessingOrders(orderRepository.countByStatus(OrderStatus.PAID));
+        response.setShippedOrders(orderRepository.countByStatus(OrderStatus.SHIPPED));
+        response.setDeliveredOrders(orderRepository.countByStatus(OrderStatus.DELIVERED));
+        response.setCancelledOrders(orderRepository.countByStatus(OrderStatus.CANCELLED));
 
         // Stock metrics
         response.setLowStockProducts(productRepository.countLowStockProducts(10));
@@ -250,7 +249,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                     response.setCategoryName(product.getCategory().getName());
                 }
 
-                // ✅ Get primary image from ImageService
                 setProductPrimaryImage(response, productId);
             }
 
@@ -291,6 +289,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 response.setProductSku(product.getSku());
                 response.setPrice(product.getPrice());
                 response.setStockQuantity(product.getStockQuantity());
+                setProductPrimaryImage(response, productId);
             }
 
             responses.add(response);
@@ -322,57 +321,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .collect(Collectors.toList());
     }
 
-    // ========== PRIVATE HELPER METHODS ==========
-
-    private ProductAnalyticsResponse toProductAnalyticsResponse(Product product) {
-        ProductAnalyticsResponse response = new ProductAnalyticsResponse();
-        response.setProductId(product.getId());
-        response.setProductName(product.getName());
-        response.setProductSku(product.getSku());
-        response.setPrice(product.getPrice());
-        response.setStockQuantity(product.getStockQuantity());
-        response.setTotalSold(product.getSoldCount());
-        response.setAverageRating(product.getAverageRating());
-        response.setTotalReviews(product.getTotalReviews());
-        response.setViewCount(product.getViewCount());
-
-        if (product.getViewCount() != null && product.getViewCount() > 0) {
-            double conversionRate = (double) product.getSoldCount() / product.getViewCount() * 100;
-            response.setConversionRate(BigDecimal.valueOf(conversionRate).setScale(2, RoundingMode.HALF_UP));
-        } else {
-            response.setConversionRate(BigDecimal.ZERO);
-        }
-
-        if (product.getCategory() != null) {
-            response.setCategoryId(product.getCategory().getId());
-            response.setCategoryName(product.getCategory().getName());
-        }
-
-        // ✅ Get primary image from ImageService
-        setProductPrimaryImage(response, product.getId());
-
-        return response;
-    }
-
-    // ✅ Helper method to set primary image using ImageService
-    private void setProductPrimaryImage(ProductAnalyticsResponse response, Long productId) {
-        try {
-            ImageResponse primaryImage = imageService.getPrimaryImage("product", productId);
-            if (primaryImage != null) {
-                response.setPrimaryImageUrl(primaryImage.getImageUrl());
-            } else {
-                // Try to get first image if no primary
-                List<ImageResponse> images = imageService.getProductImages(productId);
-                if (!images.isEmpty()) {
-                    response.setPrimaryImageUrl(images.get(0).getImageUrl());
-                }
-            }
-        } catch (Exception e) {
-            // If image loading fails, continue without image
-            response.setPrimaryImageUrl(null);
-        }
-    }
-
     // ========== CATEGORY ANALYTICS ==========
 
     @Override
@@ -395,60 +343,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         BigDecimal totalRevenue = orderRepository.getTotalRevenue();
         totalRevenue = totalRevenue != null ? totalRevenue : BigDecimal.ZERO;
         return toCategoryAnalyticsResponse(category, totalRevenue);
-    }
-
-    private CategoryAnalyticsResponse toCategoryAnalyticsResponse(Category category, BigDecimal totalRevenue) {
-        CategoryAnalyticsResponse response = new CategoryAnalyticsResponse();
-        
-        // Basic info
-        response.setCategoryId(category.getId());
-        response.setCategoryName(category.getName());
-        
-        // Parent category
-        if (category.getParentCategory() != null) {
-            response.setParentCategoryId(category.getParentCategory().getId());
-            response.setParentCategoryName(category.getParentCategory().getName());
-        }
-        
-        // Product counts
-        Long productCount = productRepository.countByCategoryId(category.getId());
-        response.setProductCount(productCount != null ? productCount : 0L);
-        
-        Long activeProductCount = productRepository.countActiveByCategoryId(category.getId());
-        response.setActiveProductCount(activeProductCount != null ? activeProductCount : 0L);
-        
-        response.setSubCategoryCount(category.getSubCategories() != null ? category.getSubCategories().size() : 0);
-        
-        // Revenue and sales
-        BigDecimal categoryRevenue = orderRepository.getRevenueByCategoryId(category.getId());
-        response.setTotalRevenue(categoryRevenue != null ? categoryRevenue : BigDecimal.ZERO);
-        
-        Long categorySold = orderRepository.getTotalSoldByCategoryId(category.getId());
-        response.setTotalSold(categorySold != null ? categorySold : 0L);
-        
-        // Price metrics
-        BigDecimal minPrice = productRepository.findMinPriceByCategoryId(category.getId());
-        BigDecimal maxPrice = productRepository.findMaxPriceByCategoryId(category.getId());
-        Double avgPrice = productRepository.findAvgPriceByCategoryId(category.getId());
-        
-        response.setMinPrice(minPrice != null ? minPrice : BigDecimal.ZERO);
-        response.setMaxPrice(maxPrice != null ? maxPrice : BigDecimal.ZERO);
-        response.setAveragePrice(avgPrice != null ? avgPrice : 0.0);
-        
-        // Revenue percentage
-        if (totalRevenue != null && totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal revenue = response.getTotalRevenue();
-            if (revenue != null && revenue.compareTo(BigDecimal.ZERO) > 0) {
-                double percentage = revenue.doubleValue() / totalRevenue.doubleValue() * 100;
-                response.setRevenuePercentage(percentage);
-            } else {
-                response.setRevenuePercentage(0.0);
-            }
-        } else {
-            response.setRevenuePercentage(0.0);
-        }
-        
-        return response;
     }
 
     // ========== GEOGRAPHIC REPORT ==========
@@ -516,7 +410,13 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public Long getOrderStatusDistribution(String status) {
-        return orderRepository.countByStatus(status);
+        // ✅ Fix: Convert String to OrderStatus enum
+        try {
+            OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            return orderRepository.countByStatus(orderStatus);
+        } catch (IllegalArgumentException e) {
+            return 0L;
+        }
     }
 
     @Override
@@ -533,7 +433,100 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return total.divide(BigDecimal.valueOf(orders.size()), 2, RoundingMode.HALF_UP);
     }
 
-    // ========== HELPER METHODS ==========
+    // ========== PRIVATE HELPER METHODS ==========
+
+    private ProductAnalyticsResponse toProductAnalyticsResponse(Product product) {
+        ProductAnalyticsResponse response = new ProductAnalyticsResponse();
+        response.setProductId(product.getId());
+        response.setProductName(product.getName());
+        response.setProductSku(product.getSku());
+        response.setPrice(product.getPrice());
+        response.setStockQuantity(product.getStockQuantity());
+        response.setTotalSold(product.getSoldCount());
+        response.setAverageRating(product.getAverageRating());
+        response.setTotalReviews(product.getTotalReviews());
+        response.setViewCount(product.getViewCount());
+
+        if (product.getViewCount() != null && product.getViewCount() > 0) {
+            double conversionRate = (double) product.getSoldCount() / product.getViewCount() * 100;
+            response.setConversionRate(BigDecimal.valueOf(conversionRate).setScale(2, RoundingMode.HALF_UP));
+        } else {
+            response.setConversionRate(BigDecimal.ZERO);
+        }
+
+        if (product.getCategory() != null) {
+            response.setCategoryId(product.getCategory().getId());
+            response.setCategoryName(product.getCategory().getName());
+        }
+
+        setProductPrimaryImage(response, product.getId());
+
+        return response;
+    }
+
+    private void setProductPrimaryImage(ProductAnalyticsResponse response, Long productId) {
+        try {
+            ImageResponse primaryImage = imageService.getPrimaryImage("product", productId);
+            if (primaryImage != null) {
+                response.setPrimaryImageUrl(primaryImage.getImageUrl());
+            } else {
+                List<ImageResponse> images = imageService.getProductImages(productId);
+                if (!images.isEmpty()) {
+                    response.setPrimaryImageUrl(images.get(0).getImageUrl());
+                }
+            }
+        } catch (Exception e) {
+            response.setPrimaryImageUrl(null);
+        }
+    }
+
+    private CategoryAnalyticsResponse toCategoryAnalyticsResponse(Category category, BigDecimal totalRevenue) {
+        CategoryAnalyticsResponse response = new CategoryAnalyticsResponse();
+        
+        response.setCategoryId(category.getId());
+        response.setCategoryName(category.getName());
+        
+        if (category.getParentCategory() != null) {
+            response.setParentCategoryId(category.getParentCategory().getId());
+            response.setParentCategoryName(category.getParentCategory().getName());
+        }
+        
+        Long productCount = productRepository.countByCategoryId(category.getId());
+        response.setProductCount(productCount != null ? productCount : 0L);
+        
+        Long activeProductCount = productRepository.countActiveByCategoryId(category.getId());
+        response.setActiveProductCount(activeProductCount != null ? activeProductCount : 0L);
+        
+        response.setSubCategoryCount(category.getSubCategories() != null ? category.getSubCategories().size() : 0);
+        
+        BigDecimal categoryRevenue = orderRepository.getRevenueByCategoryId(category.getId());
+        response.setTotalRevenue(categoryRevenue != null ? categoryRevenue : BigDecimal.ZERO);
+        
+        Long categorySold = orderRepository.getTotalSoldByCategoryId(category.getId());
+        response.setTotalSold(categorySold != null ? categorySold : 0L);
+        
+        BigDecimal minPrice = productRepository.findMinPriceByCategoryId(category.getId());
+        BigDecimal maxPrice = productRepository.findMaxPriceByCategoryId(category.getId());
+        Double avgPrice = productRepository.findAvgPriceByCategoryId(category.getId());
+        
+        response.setMinPrice(minPrice != null ? minPrice : BigDecimal.ZERO);
+        response.setMaxPrice(maxPrice != null ? maxPrice : BigDecimal.ZERO);
+        response.setAveragePrice(avgPrice != null ? avgPrice : 0.0);
+        
+        if (totalRevenue != null && totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal revenue = response.getTotalRevenue();
+            if (revenue != null && revenue.compareTo(BigDecimal.ZERO) > 0) {
+                double percentage = revenue.doubleValue() / totalRevenue.doubleValue() * 100;
+                response.setRevenuePercentage(percentage);
+            } else {
+                response.setRevenuePercentage(0.0);
+            }
+        } else {
+            response.setRevenuePercentage(0.0);
+        }
+        
+        return response;
+    }
 
     private List<DashboardResponse.TopCategoryResponse> getTopCategories(int limit) {
         List<Object[]> results = orderRepository.findTopCategories();
@@ -565,7 +558,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             response.setTotalSold(((Number) row[2]).longValue());
             response.setRevenue((BigDecimal) row[3]);
             
-            // ✅ Set image URL for top product
             try {
                 ImageResponse primaryImage = imageService.getPrimaryImage("product", (Long) row[0]);
                 if (primaryImage != null) {

@@ -108,7 +108,6 @@ public class AuthServiceImpl implements AuthService {
         try {
             User user = authMapper.toUser(request);
             
-            // ✅ Default role is USER (simple enum, no entity!)
             user.setRole(Role.USER);
 
             User savedUser = userRepository.save(user);

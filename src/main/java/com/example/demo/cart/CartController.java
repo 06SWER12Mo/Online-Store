@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/cart") 
-@Tag(name = "Cart Management", description = "Endpoints for managing shopping carts")
+@Tag(name = "Shopping Cart", description = "Endpoints for managing shopping carts so an order can be created from the cart items.")
 @SecurityRequirement(name = "bearerAuth")
 public class CartController {
 
@@ -56,7 +56,6 @@ public class CartController {
             @Valid @RequestBody AddToCartRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // ✅ Get User from UserPrincipal
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -81,7 +80,6 @@ public class CartController {
             @Valid @RequestBody UpdateCartItemRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // ✅ Get User from UserPrincipal
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -106,7 +104,6 @@ public class CartController {
             @PathVariable Long productId,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // ✅ Get User from UserPrincipal
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -128,7 +125,6 @@ public class CartController {
     public ResponseEntity<ApiResponse<CartResponse>> getCart(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // ✅ Get User from UserPrincipal
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -149,7 +145,6 @@ public class CartController {
     public ResponseEntity<ApiResponse<Void>> clearCart(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // ✅ Get User from UserPrincipal
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -191,7 +186,6 @@ public class CartController {
     public ResponseEntity<ApiResponse<Integer>> getCartItemCount(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // ✅ Get User from UserPrincipal
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

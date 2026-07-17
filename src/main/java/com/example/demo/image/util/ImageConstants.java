@@ -26,6 +26,7 @@ public final class ImageConstants {
     public static final String DEFAULT_PRODUCT_IMAGE = "/images/default-product.png";
     public static final String DEFAULT_USER_AVATAR = "/images/default-avatar.png";
     public static final String DEFAULT_CATEGORY_IMAGE = "/images/default-category.png";
+    public static final String DEFAULT_SUBCATEGORY_IMAGE = "/images/default-subcategory.png";  // ✅ Add this
     public static final String DEFAULT_VARIANT_IMAGE = "/images/default-variant.png";
     public static final String DEFAULT_STORE_LOGO = "/images/default-store-logo.png";
     public static final String DEFAULT_STORE_FAVICON = "/images/default-favicon.ico";

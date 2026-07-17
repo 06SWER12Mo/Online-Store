@@ -16,8 +16,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
-    
-    // ✅ ImageService
     private final ImageService imageService;
 
     public CategoryServiceImpl(CategoryRepository categoryRepository,
@@ -81,7 +79,6 @@ public class CategoryServiceImpl implements CategoryService {
             throw new RuntimeException("Cannot delete category with sub-categories. Please delete sub-categories first.");
         }
 
-        // ✅ Delete category image via ImageService
         imageService.deleteAllImages("category", id);
 
         categoryRepository.delete(category);

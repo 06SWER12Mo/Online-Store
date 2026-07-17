@@ -15,7 +15,7 @@ public class ProductVariantResponse {
     private Integer stockQuantity;
     private boolean inStock;
     private Double weight;
-    private String imageUrl;
+    private String imageUrl;  // ✅ Display to client
 
     // Constructors
     public ProductVariantResponse() {}
@@ -29,7 +29,7 @@ public class ProductVariantResponse {
         this.stockQuantity = variant.getStockQuantity();
         this.inStock = variant.isInStock();
         this.weight = variant.getWeight();
-        this.imageUrl = variant.getImageUrl();
+        this.imageUrl = variant.getImageUrl();  // ✅ Set from entity
 
         if (this.compareAtPrice != null && this.compareAtPrice.compareTo(this.price) > 0) {
             this.discountedPrice = this.compareAtPrice;
@@ -39,83 +39,33 @@ public class ProductVariantResponse {
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getSku() { return sku; }
+    public void setSku(String sku) { this.sku = sku; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public String getSku() {
-        return sku;
-    }
+    public BigDecimal getCompareAtPrice() { return compareAtPrice; }
+    public void setCompareAtPrice(BigDecimal compareAtPrice) { this.compareAtPrice = compareAtPrice; }
 
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
+    public BigDecimal getDiscountedPrice() { return discountedPrice; }
+    public void setDiscountedPrice(BigDecimal discountedPrice) { this.discountedPrice = discountedPrice; }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
+    public Integer getStockQuantity() { return stockQuantity; }
+    public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
+    public boolean isInStock() { return inStock; }
+    public void setInStock(boolean inStock) { this.inStock = inStock; }
 
-    public BigDecimal getCompareAtPrice() {
-        return compareAtPrice;
-    }
+    public Double getWeight() { return weight; }
+    public void setWeight(Double weight) { this.weight = weight; }
 
-    public void setCompareAtPrice(BigDecimal compareAtPrice) {
-        this.compareAtPrice = compareAtPrice;
-    }
-
-    public BigDecimal getDiscountedPrice() {
-        return discountedPrice;
-    }
-
-    public void setDiscountedPrice(BigDecimal discountedPrice) {
-        this.discountedPrice = discountedPrice;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public void setStockQuantity(Integer stockQuantity) {
-        this.stockQuantity = stockQuantity;
-    }
-
-    public boolean isInStock() {
-        return inStock;
-    }
-
-    public void setInStock(boolean inStock) {
-        this.inStock = inStock;
-    }
-
-    public Double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(Double weight) {
-        this.weight = weight;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

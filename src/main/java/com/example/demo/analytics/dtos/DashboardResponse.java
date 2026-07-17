@@ -30,7 +30,7 @@ public class DashboardResponse {
     // Stock metrics
     private Long lowStockProducts;
     private Long outOfStockProducts;
-    private Integer totalStockQuantity;
+    private Long totalStockQuantity;
 
     // Growth metrics
     private Double revenueGrowthPercentage;
@@ -185,11 +185,11 @@ public class DashboardResponse {
         this.outOfStockProducts = outOfStockProducts;
     }
 
-    public Integer getTotalStockQuantity() {
+    public Long getTotalStockQuantity() {
         return totalStockQuantity;
     }
 
-    public void setTotalStockQuantity(Integer totalStockQuantity) {
+    public void setTotalStockQuantity(Long totalStockQuantity) {
         this.totalStockQuantity = totalStockQuantity;
     }
 

@@ -71,7 +71,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Long countByStockQuantity(@Param("quantity") int quantity);
 
     @Query("SELECT SUM(p.stockQuantity) FROM Product p")
-    Integer getTotalStockQuantity();
+    Long getTotalStockQuantity();
 
     @Query("SELECT MIN(p.price) FROM Product p WHERE p.category.id = :categoryId")
     BigDecimal findMinPriceByCategoryId(@Param("categoryId") Long categoryId);

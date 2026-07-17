@@ -9,17 +9,17 @@ import com.example.demo.payment.dtos.RefundRequest;
 
 public interface PaymentService {
 
-    PaymentResponse processPayment(PaymentRequest request);
+    PaymentResponse processPayment(PaymentRequest request, Long userId);
 
-    Optional<PaymentResponse> getPaymentById(Long id);
+    Optional<PaymentResponse> getPaymentById(Long id, Long userId, boolean isAdminOrManager);
 
-    Optional<PaymentResponse> getPaymentByTransactionReference(String transactionReference);
+    Optional<PaymentResponse> getPaymentByTransactionReference(String transactionReference, Long userId, boolean isAdminOrManager);
 
-    Optional<PaymentResponse> getPaymentByOrderId(Long orderId);
+    Optional<PaymentResponse> getPaymentByOrderId(Long orderId, Long userId, boolean isAdminOrManager);
 
     PaymentResponse confirmPayment(String transactionReference);
 
-    PaymentResponse refundPayment(RefundRequest request);
+    PaymentResponse refundPayment(RefundRequest request, Long userId, boolean isAdminOrManager);
 
     List<PaymentResponse> getAllPayments();
 

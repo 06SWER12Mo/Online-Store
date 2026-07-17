@@ -9,10 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-/**
- * NOTE: This repository works with Category entities that have a parent.
- * Consider removing this module and using Category directly with parent-child relationships.
- */
 @Repository
 public interface SubCategoryRepository extends JpaRepository<Category, Long> {
 

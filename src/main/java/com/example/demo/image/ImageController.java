@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/images")
-@Tag(name = "Image", description = "Endpoints for uploading, retrieving, and deleting images for products, variants, categories, subcategories, and user avatars")
+@Tag(name = "Images", description = "Endpoints for uploading, retrieving, and deleting images for products, variants, categories, subcategories, and user avatars")
 public class ImageController {
 
     private final ImageService imageService;
