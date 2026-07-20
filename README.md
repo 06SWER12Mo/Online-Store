@@ -19,5 +19,5 @@ A complete e-commerce backend built with **Spring Boot 3.4.2** featuring JWT aut
 - 🗺️ Location & Delivery Address Management
 
 ### Business Flow
-Cart → Checkout → Payment → Order → Shipping → Delivery
+Cart → Order → Payment → Shipping → Delivery
 
