@@ -27,9 +27,6 @@ public class JwtService {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-        // Role claim mirrors whatever UserPrincipal grants (now "ROLE_" + name,
-        // e.g. "ROLE_ADMIN") so JwtAuthenticationFilter can reuse it directly
-        // without re-adding the prefix.
         String role = userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .findFirst()
@@ -41,7 +38,7 @@ public class JwtService {
                 .setSubject(userPrincipal.getUsername())
                 .claim("userId", userPrincipal.getId())
                 .claim("email", userPrincipal.getEmail())
-                .claim("role", role)  // ✅ Simple role claim
+                .claim("role", role)  
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key)
@@ -92,7 +89,6 @@ public class JwtService {
                 .get("email", String.class);
     }
 
-    // ✅ Get role from token
     public String getRoleFromToken(String token) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         return Jwts.parserBuilder()

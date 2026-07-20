@@ -15,10 +15,11 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
-                                "http://localhost:3000", 
-                                "http://localhost:5173",
-                                "http://localhost:4200",
-                                "http://localhost:8080"
+                                "http://localhost:3000", //React default port
+                                "http://localhost:5173",//Vite default port
+                                "http://localhost:4200",//Angular default port
+                                "http://localhost:8080",//Spring Boot default port
+                                "http://localhost:5500"//Live Server default port
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")

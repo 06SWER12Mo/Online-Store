@@ -25,7 +25,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Online Store API")
-                        .version("1.0")
+                        .version("1.0.0")
                         .description("""
                                 Complete Online Store Backend API with JWT Security
                         

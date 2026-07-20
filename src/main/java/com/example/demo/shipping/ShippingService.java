@@ -19,10 +19,10 @@ public interface ShippingService {
     ShippingBatchResponse addOrderToBatch(Long batchId, Long orderId);
     ShippingBatchResponse removeOrderFromBatch(Long batchId, Long orderId);
 
-    // ✅ Bus assignment (manual)
+    // Bus assignment (manual)
     ShippingBatchResponse assignBusToBatch(AssignBusRequest request);
 
-    // ✅ Bus assignment (auto)
+    // Bus assignment (auto)
     ShippingBatchResponse autoAssignBus(Long batchId);
     Bus getFirstAvailableBus();
 

@@ -1,4 +1,10 @@
-/*package com.example.demo.shipping;
+/*
+
+Commented out because this version is meant to be for real life business use, not just a demo.
+The current shipping controller is now ShippingViewController, where every thing is automated, and the admin only
+views data without need to manually trigger any action.
+
+package com.example.demo.shipping;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

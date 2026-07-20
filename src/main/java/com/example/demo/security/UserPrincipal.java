@@ -41,10 +41,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Prefix with ROLE_ so hasRole()/hasAnyRole() checks (which Spring
-        // Security internally maps to "ROLE_" + role) actually match.
-        // The Role enum stores plain names (ADMIN, MANAGER, USER) with no
-        // prefix, so it must be added here.
         return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 

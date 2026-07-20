@@ -70,12 +70,12 @@ public class BatchSchedulerServiceImpl implements BatchSchedulerService {
 
         for (ShippingBatch batch : collectingBatches) {
             if (batch.isReadyToDispatch()) {
-                // ✅ Mark as READY_TO_DISPATCH
+               
                 shippingService.markBatchReadyToDispatch(batch.getId());
                 readyCount++;
                 System.out.println("✅ Batch #" + batch.getId() + " is now READY_TO_DISPATCH");
                 
-                // ✅ IMMEDIATELY AUTO-ASSIGN A BUS!
+               
                 try {
                     shippingService.autoAssignBus(batch.getId());
                     busAssignedCount++;
@@ -105,14 +105,14 @@ public class BatchSchedulerServiceImpl implements BatchSchedulerService {
         int dispatchedCount = 0;
 
         for (ShippingBatch batch : readyBatches) {
-            // ✅ Only dispatch if bus is assigned
+            //  Only dispatch if bus is assigned
             if (batch.getBus() != null) {
                 shippingService.dispatchBatch(batch.getId());
                 dispatchedCount++;
                 System.out.println("🚚 Dispatched Batch #" + batch.getId() + 
                                    " with Bus " + batch.getBus().getPlateNumber());
             } else {
-                // ✅ Try to auto-assign a bus before dispatch
+                //  Try to auto-assign a bus before dispatch
                 try {
                     shippingService.autoAssignBus(batch.getId());
                     shippingService.dispatchBatch(batch.getId());
