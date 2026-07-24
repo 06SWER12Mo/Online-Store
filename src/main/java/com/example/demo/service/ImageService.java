@@ -1,0 +1,66 @@
+package com.example.demo.service;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.demo.dto.response.ImageResponse;
+
+import java.util.List;
+
+public interface ImageService {
+
+    // ========== UPLOAD METHODS ==========
+
+    ImageResponse uploadProductImage(Long productId, MultipartFile file, String imageType, Integer displayOrder, String altText);
+
+    ImageResponse uploadVariantImage(Long variantId, MultipartFile file);
+
+    ImageResponse uploadCategoryImage(Long categoryId, MultipartFile file);
+
+    ImageResponse uploadSubcategoryImage(Long subcategoryId, MultipartFile file);
+
+    ImageResponse uploadUserAvatar(Long userId, MultipartFile file);
+
+    // ========== STORE IMAGES ==========
+    
+    ImageResponse uploadStoreLogo(MultipartFile file);
+    
+    ImageResponse uploadStoreFavicon(MultipartFile file);
+    
+    void deleteStoreLogo();
+    
+    void deleteStoreFavicon();
+    
+    String getStoreLogoUrl();
+    
+    String getStoreFaviconUrl();
+
+    // ========== GET METHODS ==========
+
+    List<ImageResponse> getProductImages(Long productId);
+
+    List<ImageResponse> getImagesByEntity(String entityType, Long entityId);
+
+    ImageResponse getPrimaryImage(String entityType, Long entityId);
+
+    // ========== DELETE METHODS ==========
+
+    void deleteImage(Long imageId);
+
+    void deleteAllImages(String entityType, Long entityId);
+
+    // ========== UPDATE METHODS ==========
+
+    void setPrimaryImage(String entityType, Long entityId, Long imageId);
+
+    // ========== USER AVATAR HELPER METHODS ==========
+
+    String getUserAvatarUrl(Long userId);
+    
+    void updateUserAvatar(Long userId, String imageUrl);
+    
+    void clearUserAvatar(Long userId);
+
+    // ========== HELPER METHODS ==========
+
+    String getDefaultImage(String entityType);
+}

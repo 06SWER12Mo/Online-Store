@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Configuration
-// FIXED: Remove auditorAwareRef since it's not being used
 @EnableJpaAuditing(
         dateTimeProviderRef = "auditingDateTimeProvider"
 )

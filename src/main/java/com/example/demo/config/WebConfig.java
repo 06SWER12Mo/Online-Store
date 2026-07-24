@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.example.demo.image.util.ImageConstants;
+import com.example.demo.util.ImageConstants;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -23,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:" + ImageConstants.BASE_PATH + "/");
         
         // ============================================================
-        // 2. LEGACY UPLOADS (If you have any)
+        // 2. LEGACY UPLOADS
         // ============================================================
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");

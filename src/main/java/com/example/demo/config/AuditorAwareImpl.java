@@ -1,10 +1,11 @@
 package com.example.demo.config;
 
-import com.example.demo.user.User;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+
+import com.example.demo.entity.User;
 
 import java.util.Optional;
 
