@@ -13,6 +13,7 @@ public class ProductSummaryResponse {
     private BigDecimal discountedPrice;
     private BigDecimal discountPercentage;
     private String sku;
+    private BigDecimal compareAtPrice;
     private Integer stockQuantity;
     private boolean inStock;
     private boolean active;
@@ -30,6 +31,7 @@ public class ProductSummaryResponse {
 
     public ProductSummaryResponse(Product product) {
         this.id = product.getId();
+        this.compareAtPrice=product.getCompareAtPrice();
         this.name = product.getName();
         this.shortDescription = product.getShortDescription();
         this.price = product.getPrice();
@@ -50,8 +52,6 @@ public class ProductSummaryResponse {
             this.categoryName = product.getCategory().getName();
         }
 
-        // Primary image is set separately via ImageService
-        // Call setPrimaryImageUrl() after constructing
     }
 
     // Getters and Setters
@@ -72,6 +72,9 @@ public class ProductSummaryResponse {
 
     public BigDecimal getDiscountPercentage() { return discountPercentage; }
     public void setDiscountPercentage(BigDecimal discountPercentage) { this.discountPercentage = discountPercentage; }
+
+    public BigDecimal getCompareAtPrice() { return compareAtPrice; }
+    public void setCompareAtPrice(BigDecimal compareAtPrice) { this.compareAtPrice = compareAtPrice; }
 
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
@@ -108,4 +111,5 @@ public class ProductSummaryResponse {
 
     public Integer getSoldCount() { return soldCount; }
     public void setSoldCount(Integer soldCount) { this.soldCount = soldCount; }
+
 }

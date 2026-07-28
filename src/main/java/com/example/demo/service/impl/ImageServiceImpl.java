@@ -86,13 +86,14 @@ public class ImageServiceImpl implements ImageService {
     public ImageResponse uploadVariantImage(Long variantId, MultipartFile file) {
         validateFile(file);
         
+        // Delete old images FIRST (their path may be same as new file)
+        deleteAllImages("variant", variantId);
+        
         String folderPath = getFolderPath("product-variants", variantId);
         String fileName = "image.jpg";
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "product-variants/" + variantId + "/" + fileName;
-        
-        deleteAllImages("variant", variantId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
@@ -119,13 +120,14 @@ public class ImageServiceImpl implements ImageService {
     public ImageResponse uploadCategoryImage(Long categoryId, MultipartFile file) {
         validateFile(file);
         
+        // Delete old images FIRST (their path may be same as new file)
+        deleteAllImages("category", categoryId);
+        
         String folderPath = getFolderPath("categories", categoryId);
         String fileName = "image.jpg";
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "categories/" + categoryId + "/" + fileName;
-        
-        deleteAllImages("category", categoryId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
@@ -151,13 +153,14 @@ public class ImageServiceImpl implements ImageService {
     public ImageResponse uploadSubcategoryImage(Long subcategoryId, MultipartFile file) {
         validateFile(file);
         
+        // Delete old images FIRST (their path may be same as new file)
+        deleteAllImages("subcategory", subcategoryId);
+        
         String folderPath = getFolderPath("subcategories", subcategoryId);
         String fileName = "image.jpg";
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "subcategories/" + subcategoryId + "/" + fileName;
-        
-        deleteAllImages("subcategory", subcategoryId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,
@@ -181,6 +184,8 @@ public class ImageServiceImpl implements ImageService {
 
     @Override
     public ImageResponse uploadUserAvatar(Long userId, MultipartFile file) {
+        // Delete old avatar from database and filesystem FIRST (path is same as new file)
+        deleteAllImages("user", userId);
         validateFile(file);
         
         String folderPath = getFolderPath("users", userId);
@@ -188,9 +193,6 @@ public class ImageServiceImpl implements ImageService {
         
         String fullPath = saveFile(file, folderPath, fileName);
         String imageUrl = ImageConstants.IMAGE_URL_PREFIX + "users/" + userId + "/" + fileName;
-        
-        // Delete old avatar from database and filesystem
-        deleteAllImages("user", userId);
         
         ImageEntity entity = imageMapper.toEntity(
             imageUrl,

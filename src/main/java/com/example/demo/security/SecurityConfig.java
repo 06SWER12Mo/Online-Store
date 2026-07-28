@@ -81,46 +81,51 @@ public class SecurityConfig {
                         // Auth endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/users/register").permitAll()
-                        
+
                         // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/v3/api-docs").permitAll()
                         .requestMatchers("/api-docs/**", "/api-docs").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
-                        
+
                         // Health checks
                         .requestMatchers("/api/health/**", "/actuator/health").permitAll()
-                        
+
                         // H2 Console
                         .requestMatchers("/h2-console/**").permitAll()
-                        
-                        // Public images (view only)
+
+                        // Public images (view only) - REST metadata endpoints
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/images/**").permitAll()
-                        
+
+                        // Public images (view only) - actual static image files served by WebConfig
+                        // FIX: this path (no /v1) is what <img> tags actually request; it was
+                        // previously falling through to anyRequest().authenticated() -> 401
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/images/**").permitAll()
+
                         // Public store settings
                         .requestMatchers("/api/v1/store-settings/public/**").permitAll()
-                        
+
                         // Public category endpoints
                         .requestMatchers("/api/v1/categories/**").permitAll()
-                        
+
                         // Public product endpoints
                         .requestMatchers("/api/v1/products/**").permitAll()
-                        
+
                         // Public location endpoints
                         .requestMatchers("/api/v1/locations/**").permitAll()
-                        
+
                         // Public review endpoints
                         .requestMatchers("/api/v1/reviews/**").permitAll()
-                        
+
                         // Public order tracking
                         .requestMatchers("/api/v1/orders/track/**").permitAll()
-                        
+
                         // ============================================================
                         // PAYMENT ENDPOINTS - Require authentication
                         // All payment endpoints are protected by @PreAuthorize in controller
                         // ============================================================
                         .requestMatchers("/api/v1/payments/**").authenticated()
-                        
+
                         // ============================================================
                         // SHIPPING ENDPOINTS - Require authentication
                         // ============================================================
@@ -130,7 +135,7 @@ public class SecurityConfig {
                        // All employee endpoints are protected by @PreAuthorize in controller
                      // ============================================================
                         .requestMatchers("/api/v1/employees/**").authenticated()
-                        
+
                         // ============================================================
                         // AUTHENTICATED ENDPOINTS - All other requests need authentication
                         // ============================================================

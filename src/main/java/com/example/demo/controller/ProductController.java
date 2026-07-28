@@ -9,7 +9,6 @@ import com.example.demo.dto.request.ProductVariantRequest;
 import com.example.demo.dto.response.ProductResponse;
 import com.example.demo.dto.response.ProductSummaryResponse;
 import com.example.demo.dto.response.ProductVariantResponse;
-import com.example.demo.service.ProductService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -32,14 +32,16 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.example.demo.service.impl.ProductServiceImpl;
+
 @RestController
 @RequestMapping("/api/v1/products")
 @Tag(name = "Product Management", description = "Endpoints for managing products, specifications, and variants")
 public class ProductController {
 
-    private final ProductService productService;
+    private final ProductServiceImpl productService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductServiceImpl productService) {
         this.productService = productService;
     }
 

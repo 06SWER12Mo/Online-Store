@@ -2,9 +2,11 @@ package com.example.demo.mapper;
 
 import com.example.demo.dto.response.CartItemResponse;
 import com.example.demo.dto.response.CartResponse;
+import com.example.demo.dto.response.ImageResponse;
 import com.example.demo.entity.Cart;
 import com.example.demo.entity.CartItem;
 import com.example.demo.entity.Product;
+import com.example.demo.service.ImageService;
 
 import org.springframework.stereotype.Component;
 
@@ -14,6 +16,12 @@ import java.util.stream.Collectors;
 
 @Component
 public class CartMapper {
+    
+    private final ImageService imageService;
+
+    public CartMapper(ImageService imageService) {
+        this.imageService = imageService;
+    }
     
     public CartResponse toResponse(Cart cart) {
         if (cart == null) {
@@ -35,7 +43,7 @@ public class CartMapper {
     }
 
     /**
-     * Convert CartItem to CartItemResponse
+     * Convert CartItem to CartItemResponse, including the primary image URL
      */
     public CartItemResponse toItemResponse(CartItem item) {
         if (item == null) {
@@ -45,7 +53,7 @@ public class CartMapper {
         BigDecimal subtotal = item.getProduct().getPrice()
                 .multiply(BigDecimal.valueOf(item.getQuantity()));
 
-        return new CartItemResponse(
+        CartItemResponse response = new CartItemResponse(
                 item.getId(),
                 item.getProduct().getId(),
                 item.getProduct().getName(),
@@ -53,6 +61,18 @@ public class CartMapper {
                 item.getProduct().getPrice(),
                 subtotal
         );
+
+        // Load primary image for this product (same pattern as ProductServiceImpl)
+        try {
+            ImageResponse primaryImage = imageService.getPrimaryImage("product", item.getProduct().getId());
+            if (primaryImage != null) {
+                response.setImageUrl(primaryImage.getImageUrl());
+            }
+        } catch (Exception e) {
+            // If image lookup fails, just continue without an image URL
+        }
+
+        return response;
     }
 
     /**

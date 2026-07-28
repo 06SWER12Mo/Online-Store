@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.dto.request.ProductRequest;
 import com.example.demo.dto.request.ProductSearchRequest;
@@ -17,6 +17,8 @@ import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.ProductSpecificationRepository;
 import com.example.demo.repository.ProductVariantRepository;
+import com.example.demo.service.ImageService;
+import com.example.demo.service.ProductService;
 
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;

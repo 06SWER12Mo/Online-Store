@@ -12,6 +12,7 @@ public class CartItemResponse {
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal subtotal;
+    private String imageUrl;
 
     // Constructors
     public CartItemResponse() {}
@@ -54,6 +55,9 @@ public class CartItemResponse {
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
 
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
     @Override
     public String toString() {
         return "CartItemResponse{" +
@@ -63,6 +67,7 @@ public class CartItemResponse {
                 ", quantity=" + quantity +
                 ", price=" + price +
                 ", subtotal=" + subtotal +
+                ", imageUrl='" + imageUrl + '\'' +
                 '}';
     }
 }
