@@ -117,6 +117,9 @@ public class SecurityConfig {
                         // Public review endpoints
                         .requestMatchers("/api/v1/reviews/**").permitAll()
 
+                        // Public home page data
+                        .requestMatchers("/api/v1/home/**").permitAll()
+
                         // Public order tracking
                         .requestMatchers("/api/v1/orders/track/**").permitAll()
 

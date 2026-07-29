@@ -142,6 +142,27 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void requestEmailVerification(Long id) {
+        User user = findUserById(id);
+        if (user.isEmailVerified()) {
+            throw new RuntimeException("Email is already verified");
+        }
+        if (user.isVerificationRequested()) {
+            throw new RuntimeException("Verification already requested");
+        }
+        userRepository.requestEmailVerification(id);
+    }
+
+    @Override
+    public void cancelEmailVerification(Long id) {
+        User user = findUserById(id);
+        if (!user.isVerificationRequested()) {
+            throw new RuntimeException("No verification request to cancel");
+        }
+        userRepository.cancelEmailVerification(id);
+    }
+
+    @Override
     public void updateUserRole(Long userId, Role role) {
         User user = findUserById(userId);
         user.setRole(role);  // ✅ Simple ENUM, no repository needed

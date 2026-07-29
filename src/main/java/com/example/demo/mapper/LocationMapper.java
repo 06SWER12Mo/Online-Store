@@ -55,7 +55,22 @@ public class LocationMapper {
         }
     }
 
+    /** Lightweight response for list endpoints — avoids loading lazy towns */
     public BigAreaResponse toBigAreaResponse(BigArea bigArea) {
+        return new BigAreaResponse(
+            bigArea.getId(),
+            bigArea.getName(),
+            bigArea.getCode(),
+            bigArea.getDescription(),
+            bigArea.isActive(),
+            bigArea.getDisplayOrder(),
+            bigArea.getCreatedAt(),
+            bigArea.getUpdatedAt()
+        );
+    }
+
+    /** Full response with towns — use only for single-entity detail views */
+    public BigAreaResponse toBigAreaDetailResponse(BigArea bigArea) {
         return new BigAreaResponse(bigArea);
     }
 
@@ -118,8 +133,25 @@ public class LocationMapper {
         }
     }
 
+    /** Lightweight town response for list/search endpoints — avoids lazy-loading delivery addresses */
     public TownResponse toTownResponse(Town town) {
-        return new TownResponse(town);
+        return new TownResponse(
+            town.getId(),
+            town.getName(),
+            town.getCode(),
+            town.getZipCode(),
+            town.getDescription(),
+            town.isActive(),
+            town.getDisplayOrder(),
+            town.getLatitude(),
+            town.getLongitude(),
+            town.getDeliveryFee(),
+            town.isDeliveryAvailable(),
+            town.getBigArea() != null ? town.getBigArea().getId() : null,
+            town.getBigArea() != null ? town.getBigArea().getName() : null,
+            town.getCreatedAt(),
+            town.getUpdatedAt()
+        );
     }
 
     public List<TownResponse> toTownResponseList(List<Town> towns) {

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.demo.dto.response.TownSearchResult;
 import com.example.demo.entity.Town;
 
 import java.util.List;
@@ -40,6 +41,16 @@ public interface TownRepository extends JpaRepository<Town, Long> {
 
     @Query("SELECT t FROM Town t WHERE t.name LIKE %:keyword% OR t.code LIKE %:keyword% OR t.zipCode LIKE %:keyword%")
     List<Town> searchTowns(@Param("keyword") String keyword);
+
+    @Query("SELECT NEW com.example.demo.dto.response.TownSearchResult(t.id, t.name, t.bigArea.name, t.zipCode) " +
+           "FROM Town t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(t.zipCode) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY t.name ASC")
+    List<TownSearchResult> searchTownsLight(@Param("keyword") String keyword);
+
+    @Query("SELECT NEW com.example.demo.dto.response.TownSearchResult(t.id, t.name, t.bigArea.name, t.zipCode) " +
+           "FROM Town t ORDER BY t.name ASC")
+    List<TownSearchResult> findAllTownsLight();
 
     @Query("SELECT t FROM Town t WHERE t.bigArea.id = :bigAreaId AND t.deliveryAvailable = true")
     List<Town> findDeliveryAvailableTowns(@Param("bigAreaId") Long bigAreaId);

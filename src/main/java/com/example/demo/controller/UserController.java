@@ -139,6 +139,26 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    // ========== USER VERIFICATION REQUEST ENDPOINTS (Any authenticated user) ==========
+
+    @PostMapping("/me/request-verification")
+    @Operation(summary = "Request email verification", description = "Submit a request for the store to verify your email address.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<Void> requestEmailVerification() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        userService.requestEmailVerification(userPrincipal.getId());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/me/request-verification")
+    @Operation(summary = "Cancel email verification request", description = "Cancel a pending email verification request.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<Void> cancelEmailVerification() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        userService.cancelEmailVerification(userPrincipal.getId());
+        return ResponseEntity.ok().build();
+    }
+
     // ========== ROLE MANAGEMENT (Admin only) ==========
 
     @PutMapping("/{id}/role")

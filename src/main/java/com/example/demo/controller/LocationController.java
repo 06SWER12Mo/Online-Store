@@ -7,6 +7,7 @@ import com.example.demo.dto.request.TownRequest;
 import com.example.demo.dto.response.BigAreaResponse;
 import com.example.demo.dto.response.DeliveryAddressResponse;
 import com.example.demo.dto.response.TownResponse;
+import com.example.demo.dto.response.TownSearchResult;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -322,6 +323,20 @@ public class LocationController {
             @Parameter(description = "Keyword to search for", required = true)
             @RequestParam String keyword) {
         return ResponseEntity.ok(locationService.searchTowns(keyword));
+    }
+
+    @GetMapping("/towns/search-light")
+    @Operation(summary = "Lightweight town search (no nested entities)", description = "Searches towns and returns only id, name, bigAreaName, zipCode. Avoids LazyInitializationException.")
+    public ResponseEntity<List<TownSearchResult>> searchTownsLight(
+            @Parameter(description = "Keyword to search for", required = false)
+            @RequestParam(required = false, defaultValue = "") String keyword) {
+        List<TownSearchResult> results;
+        if (keyword == null || keyword.trim().isEmpty()) {
+            results = locationService.findAllTownsLight();
+        } else {
+            results = locationService.searchTownsLight(keyword);
+        }
+        return ResponseEntity.ok(results);
     }
 
     @GetMapping("/towns/{id}/address-count")

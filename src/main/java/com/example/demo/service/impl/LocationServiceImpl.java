@@ -6,6 +6,7 @@ import com.example.demo.dto.request.TownRequest;
 import com.example.demo.dto.response.BigAreaResponse;
 import com.example.demo.dto.response.DeliveryAddressResponse;
 import com.example.demo.dto.response.TownResponse;
+import com.example.demo.dto.response.TownSearchResult;
 import com.example.demo.entity.BigArea;
 import com.example.demo.entity.DeliveryAddress;
 import com.example.demo.entity.Town;
@@ -188,6 +189,16 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public List<TownResponse> searchTowns(String keyword) {
         return locationMapper.toTownResponseList(townRepository.searchTowns(keyword));
+    }
+
+    @Override
+    public List<TownSearchResult> searchTownsLight(String keyword) {
+        return townRepository.searchTownsLight(keyword);
+    }
+
+    @Override
+    public List<TownSearchResult> findAllTownsLight() {
+        return townRepository.findAllTownsLight();
     }
 
     @Override

@@ -62,11 +62,17 @@ public class CartMapper {
                 subtotal
         );
 
-        // Load primary image for this product (same pattern as ProductServiceImpl)
+        // Load primary image for this product (same pattern as ProductServiceImpl.loadProductImages)
         try {
             ImageResponse primaryImage = imageService.getPrimaryImage("product", item.getProduct().getId());
             if (primaryImage != null) {
                 response.setImageUrl(primaryImage.getImageUrl());
+            } else {
+                // Fallback: if no PRIMARY image, use the first image (same as ProductServiceImpl)
+                List<ImageResponse> images = imageService.getProductImages(item.getProduct().getId());
+                if (images != null && !images.isEmpty()) {
+                    response.setImageUrl(images.get(0).getImageUrl());
+                }
             }
         } catch (Exception e) {
             // If image lookup fails, just continue without an image URL

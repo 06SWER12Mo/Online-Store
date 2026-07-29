@@ -16,6 +16,7 @@ public class UserProfileResponse {
     private String profilePictureUrl;
     private boolean enabled;
     private boolean emailVerified;
+    private boolean verificationRequested;
     private String role; 
     private LocalDateTime createdAt;
 
@@ -32,6 +33,7 @@ public class UserProfileResponse {
         this.profilePictureUrl = user.getProfilePictureUrl();
         this.enabled = user.isEnabled();
         this.emailVerified = user.isEmailVerified();
+        this.verificationRequested = user.isVerificationRequested();
         this.role = user.getRole().name();  
         this.createdAt = user.getCreatedAt();
     }
@@ -107,6 +109,14 @@ public class UserProfileResponse {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public boolean isVerificationRequested() {
+        return verificationRequested;
+    }
+
+    public void setVerificationRequested(boolean verificationRequested) {
+        this.verificationRequested = verificationRequested;
     }
 
     public String getRole() {

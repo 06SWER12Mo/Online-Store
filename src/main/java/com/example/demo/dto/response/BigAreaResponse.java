@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.example.demo.entity.BigArea;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class BigAreaResponse {
 
@@ -22,6 +23,23 @@ public class BigAreaResponse {
     // Constructors
     public BigAreaResponse() {}
 
+    // Lightweight constructor used for list endpoints (avoids loading lazy towns/addresses)
+    public BigAreaResponse(Long id, String name, String code, String description,
+                            boolean active, Integer displayOrder,
+                            LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.name = name;
+        this.code = code;
+        this.description = description;
+        this.active = active;
+        this.displayOrder = displayOrder;
+        this.townCount = 0;
+        this.towns = null;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    // Full constructor for detail views (includes towns)
     public BigAreaResponse(BigArea bigArea) {
         this.id = bigArea.getId();
         this.name = bigArea.getName();
@@ -29,12 +47,10 @@ public class BigAreaResponse {
         this.description = bigArea.getDescription();
         this.active = bigArea.isActive();
         this.displayOrder = bigArea.getDisplayOrder();
-        this.townCount = bigArea.getTowns().size();
         this.createdAt = bigArea.getCreatedAt();
         this.updatedAt = bigArea.getUpdatedAt();
-        this.towns = bigArea.getTowns().stream()
-                .map(TownResponse::new)
-                .collect(Collectors.toList());
+        this.towns = null; // Not loaded here to avoid lazy init issues
+        this.townCount = 0;
     }
 
     // Getters and Setters
@@ -94,6 +110,7 @@ public class BigAreaResponse {
         this.townCount = townCount;
     }
 
+    @JsonIgnore
     public List<TownResponse> getTowns() {
         return towns;
     }

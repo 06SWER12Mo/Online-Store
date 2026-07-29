@@ -34,6 +34,10 @@ public interface UserService {
 
     void verifyUserEmail(Long id);
 
+    void requestEmailVerification(Long id);
+
+    void cancelEmailVerification(Long id);
+
     // ✅ Simple role update - just the ENUM
     void updateUserRole(Long userId, Role role);
 

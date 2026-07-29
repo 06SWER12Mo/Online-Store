@@ -2,9 +2,9 @@ package com.example.demo.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.example.demo.entity.Town;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class TownResponse {
 
@@ -29,6 +29,33 @@ public class TownResponse {
     // Constructors
     public TownResponse() {}
 
+    /** Lightweight constructor for list/search endpoints — avoids lazy-loading delivery addresses */
+    public TownResponse(Long id, String name, String code, String zipCode,
+                         String description, boolean active, Integer displayOrder,
+                         Double latitude, Double longitude,
+                         java.math.BigDecimal deliveryFee, boolean deliveryAvailable,
+                         Long bigAreaId, String bigAreaName,
+                         LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.name = name;
+        this.code = code;
+        this.zipCode = zipCode;
+        this.description = description;
+        this.active = active;
+        this.displayOrder = displayOrder;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.deliveryFee = deliveryFee;
+        this.deliveryAvailable = deliveryAvailable;
+        this.bigAreaId = bigAreaId;
+        this.bigAreaName = bigAreaName;
+        this.deliveryAddressCount = 0;
+        this.deliveryAddresses = null;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    /** Full constructor for detail views */
     public TownResponse(Town town) {
         this.id = town.getId();
         this.name = town.getName();
@@ -43,16 +70,13 @@ public class TownResponse {
         this.deliveryAvailable = town.isDeliveryAvailable();
         this.createdAt = town.getCreatedAt();
         this.updatedAt = town.getUpdatedAt();
-        this.deliveryAddressCount = town.getDeliveryAddresses().size();
+        this.deliveryAddressCount = 0;
+        this.deliveryAddresses = null;
         
         if (town.getBigArea() != null) {
             this.bigAreaId = town.getBigArea().getId();
             this.bigAreaName = town.getBigArea().getName();
         }
-        
-        this.deliveryAddresses = town.getDeliveryAddresses().stream()
-                .map(DeliveryAddressResponse::new)
-                .collect(Collectors.toList());
     }
 
     // Getters and Setters
@@ -168,6 +192,7 @@ public class TownResponse {
         this.deliveryAddressCount = deliveryAddressCount;
     }
 
+    @JsonIgnore
     public List<DeliveryAddressResponse> getDeliveryAddresses() {
         return deliveryAddresses;
     }

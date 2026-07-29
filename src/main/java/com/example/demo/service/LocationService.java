@@ -9,6 +9,7 @@ import com.example.demo.dto.request.TownRequest;
 import com.example.demo.dto.response.BigAreaResponse;
 import com.example.demo.dto.response.DeliveryAddressResponse;
 import com.example.demo.dto.response.TownResponse;
+import com.example.demo.dto.response.TownSearchResult;
 
 import java.util.List;
 
@@ -35,6 +36,8 @@ public interface LocationService {
     List<TownResponse> getActiveTownsByBigArea(Long bigAreaId);
     List<TownResponse> getDeliveryAvailableTowns(Long bigAreaId);
     List<TownResponse> searchTowns(String keyword);
+    List<TownSearchResult> searchTownsLight(String keyword);
+    List<TownSearchResult> findAllTownsLight();
     void toggleTownActive(Long id);
     void toggleTownDeliveryAvailability(Long id);
     long countDeliveryAddressesByTown(Long townId);

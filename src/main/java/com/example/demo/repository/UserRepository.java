@@ -51,6 +51,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("UPDATE User u SET u.emailVerified = true WHERE u.id = :userId")
     void verifyEmail(@Param("userId") Long userId);
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.verificationRequested = true WHERE u.id = :userId")
+    void requestEmailVerification(@Param("userId") Long userId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.verificationRequested = false WHERE u.id = :userId")
+    void cancelEmailVerification(@Param("userId") Long userId);
+
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt BETWEEN :start AND :end")
     long countUsersRegisteredBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 

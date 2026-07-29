@@ -62,11 +62,11 @@ public class HomeController {
                     mapToSummary(p, summary);
                     return summary;
                 })
-                .limit(8)
+                .limit(10)
                 .toList();
 
         // Fetch new arrivals (top 8)
-        List<ProductSummaryResponse> newArrivals = productService.getNewArrivals(PageRequest.of(0, 8))
+        List<ProductSummaryResponse> newArrivals = productService.getNewArrivals(PageRequest.of(0, 10))
                 .stream()
                 .map(p -> {
                     ProductSummaryResponse summary = new ProductSummaryResponse();
@@ -76,7 +76,7 @@ public class HomeController {
                 .toList();
 
         // Fetch best sellers (top 8)
-        List<ProductSummaryResponse> bestSellers = productService.getBestSellers(PageRequest.of(0, 8))
+        List<ProductSummaryResponse> bestSellers = productService.getBestSellers(PageRequest.of(0, 10))
                 .stream()
                 .map(p -> {
                     ProductSummaryResponse summary = new ProductSummaryResponse();

@@ -52,6 +52,9 @@ public class User implements UserDetails {
     @Column(name = "email_verified")
     private boolean emailVerified = false;
 
+    @Column(name = "verification_requested")
+    private Boolean verificationRequested = false;
+
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
@@ -119,6 +122,11 @@ public class User implements UserDetails {
 
     public boolean isEmailVerified() { return emailVerified; }
     public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public Boolean isVerificationRequested() { 
+        return verificationRequested != null && verificationRequested; 
+    }
+    public void setVerificationRequested(Boolean verificationRequested) { this.verificationRequested = verificationRequested; }
 
     public String getProfilePictureUrl() { return profilePictureUrl; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
