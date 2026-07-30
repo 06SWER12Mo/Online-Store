@@ -62,10 +62,10 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // ========== ADMIN OR SELF ENDPOINTS ==========
+    // ========== ADMIN, MANAGER, OR SELF ENDPOINTS ==========
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isCurrentUser(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @userSecurity.isCurrentUser(#id)")
     @Operation(summary = "Get user by ID", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         UserResponse response = userService.getUserById(id);
@@ -73,7 +73,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isCurrentUser(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @userSecurity.isCurrentUser(#id)")
     @Operation(summary = "Update user by ID", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<UserResponse> updateUserById(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
@@ -81,7 +81,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userSecurity.isCurrentUser(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @userSecurity.isCurrentUser(#id)")
     @Operation(summary = "Delete user by ID", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
         userService.deleteUser(id);
@@ -91,8 +91,8 @@ public class UserController {
     // ========== ADMIN ONLY ENDPOINTS ==========
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get all users (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Get all users", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Page<UserResponse>> getAllUsers(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<UserResponse> users = userService.getAllUsers(pageable);
@@ -100,40 +100,40 @@ public class UserController {
     }
 
     @PutMapping("/{id}/enable")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Enable user account (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Enable user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> enableUser(@PathVariable Long id) {
         userService.enableUser(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/disable")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Disable user account (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Disable user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> disableUser(@PathVariable Long id) {
         userService.disableUser(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/lock")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Lock user account (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Lock user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> lockUser(@PathVariable Long id) {
         userService.lockUser(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/unlock")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Unlock user account (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Unlock user account", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> unlockUser(@PathVariable Long id) {
         userService.unlockUser(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/verify")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Verify user email (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Verify user email", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> verifyUserEmail(@PathVariable Long id) {
         userService.verifyUserEmail(id);
         return ResponseEntity.ok().build();
@@ -159,32 +159,32 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    // ========== ROLE MANAGEMENT (Admin only) ==========
+    // ========== ROLE MANAGEMENT ==========
 
     @PutMapping("/{id}/role")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update user role (Admin only)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Update user role", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> updateUserRole(@PathVariable Long id, @RequestParam Role role) {
         userService.updateUserRole(id, role);
         return ResponseEntity.ok().build();
     }
 
-    // ========== STATISTICS (Admin only) ==========
+    // ========== STATISTICS ==========
 
     @GetMapping("/stats/count")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Long> countTotalUsers() {
         return ResponseEntity.ok(userService.countTotalUsers());
     }
 
     @GetMapping("/stats/active")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Long> countActiveUsers() {
         return ResponseEntity.ok(userService.countActiveUsers());
     }
 
     @GetMapping("/stats/registered")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Long> countUsersRegisteredBetween(
             @RequestParam String startDate,
             @RequestParam String endDate) {

@@ -1,11 +1,10 @@
 package com.example.demo.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.example.demo.entity.BigArea;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class BigAreaResponse {
 
@@ -34,7 +33,7 @@ public class BigAreaResponse {
         this.active = active;
         this.displayOrder = displayOrder;
         this.townCount = 0;
-        this.towns = null;
+        this.towns = new ArrayList<>();
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -49,8 +48,8 @@ public class BigAreaResponse {
         this.displayOrder = bigArea.getDisplayOrder();
         this.createdAt = bigArea.getCreatedAt();
         this.updatedAt = bigArea.getUpdatedAt();
-        this.towns = null; // Not loaded here to avoid lazy init issues
         this.townCount = 0;
+        this.towns = new ArrayList<>();
     }
 
     // Getters and Setters
@@ -110,7 +109,6 @@ public class BigAreaResponse {
         this.townCount = townCount;
     }
 
-    @JsonIgnore
     public List<TownResponse> getTowns() {
         return towns;
     }

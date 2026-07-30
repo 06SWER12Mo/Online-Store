@@ -46,7 +46,7 @@ public class Town {
     private BigDecimal deliveryFee = BigDecimal.ZERO;
 
     @Column(name = "is_delivery_available")
-    private boolean deliveryAvailable = true;
+    private Boolean deliveryAvailable = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "big_area_id")
@@ -153,11 +153,11 @@ public class Town {
         this.deliveryFee = deliveryFee;
     }
 
-    public boolean isDeliveryAvailable() {
+    public Boolean isDeliveryAvailable() {
         return deliveryAvailable;
     }
 
-    public void setDeliveryAvailable(boolean deliveryAvailable) {
+    public void setDeliveryAvailable(Boolean deliveryAvailable) {
         this.deliveryAvailable = deliveryAvailable;
     }
 

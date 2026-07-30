@@ -59,8 +59,8 @@ public class StoreSettings {
     @Column(name = "currency_code", length = 3)
     private String currencyCode = "USD";
 
-    @Column(name = "currency_symbol", length = 5)
-    private String currencySymbol = "$";
+    @Column(name = "currency_symbol", columnDefinition = "VARCHAR(5) CHARACTER SET utf8mb4")
+    private String currencySymbol = "₪";
 
     @Column(name = "tax_rate", precision = 5, scale = 2)
     private BigDecimal taxRate;

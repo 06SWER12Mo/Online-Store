@@ -20,7 +20,6 @@ public class StoreSettingsServiceImpl implements StoreSettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public StoreSettingsResponse getSettings() {
         StoreSettings settings = getOrCreateSettings();
         return new StoreSettingsResponse(settings);

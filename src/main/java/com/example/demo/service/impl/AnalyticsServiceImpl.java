@@ -126,7 +126,46 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public DashboardResponse getDashboardData(LocalDateTime startDate, LocalDateTime endDate) {
-        return getDashboardData();
+        DashboardResponse response = new DashboardResponse();
+
+        // Order/revenue counts within the date range
+        Long orderCount = orderRepository.countOrdersBetween(startDate, endDate);
+        response.setTotalOrders(orderCount);
+        response.setTotalProducts(productRepository.count());
+        response.setTotalCustomers(userRepository.count());
+        response.setTotalCategories(categoryRepository.count());
+        response.setTotalReviews(reviewRepository.count());
+
+        BigDecimal totalRevenue = orderRepository.getRevenueBetween(startDate, endDate);
+        response.setTotalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+        response.setTodayRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+        response.setThisWeekRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+        response.setThisMonthRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+
+        if (orderCount > 0 && totalRevenue != null) {
+            response.setAverageOrderValue(totalRevenue.divide(BigDecimal.valueOf(orderCount), 2, RoundingMode.HALF_UP));
+        } else {
+            response.setAverageOrderValue(BigDecimal.ZERO);
+        }
+
+        response.setPendingOrders(0L);
+        response.setProcessingOrders(0L);
+        response.setShippedOrders(0L);
+        response.setDeliveredOrders(0L);
+        response.setCancelledOrders(0L);
+        response.setLowStockProducts(productRepository.countLowStockProducts(10));
+        response.setOutOfStockProducts(productRepository.countByStockQuantity(0));
+        response.setTotalStockQuantity(productRepository.getTotalStockQuantity());
+        response.setRevenueGrowthPercentage(0.0);
+        response.setOrderGrowthPercentage(0.0);
+        response.setCustomerGrowthPercentage(0.0);
+
+        // Top selling products WITHIN the date range
+        response.setTopSellingProducts(getTopSellingProductResponses(10, startDate, endDate));
+        response.setRecentSales(getSalesByDay(startDate.toLocalDate(), endDate.toLocalDate()));
+        response.setLastUpdated(LocalDateTime.now());
+
+        return response;
     }
 
     // ========== SALES REPORT ==========
@@ -549,28 +588,53 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     }
 
     private List<DashboardResponse.TopProductResponse> getTopSellingProductResponses(int limit) {
-        List<Object[]> results = orderRepository.findTopSellingProducts(limit);
-        List<DashboardResponse.TopProductResponse> responses = new ArrayList<>();
+        return getTopSellingProductResponses(limit, null, null);
+    }
 
-        for (Object[] row : results) {
-            DashboardResponse.TopProductResponse response = new DashboardResponse.TopProductResponse();
-            response.setProductId((Long) row[0]);
-            response.setProductName((String) row[1]);
-            response.setTotalSold(((Number) row[2]).longValue());
-            response.setRevenue((BigDecimal) row[3]);
-            
-            try {
-                ImageResponse primaryImage = imageService.getPrimaryImage("product", (Long) row[0]);
-                if (primaryImage != null) {
-                    response.setImageUrl(primaryImage.getImageUrl());
-                }
-            } catch (Exception e) {
-                response.setImageUrl(null);
-            }
-            
-            responses.add(response);
+    private List<DashboardResponse.TopProductResponse> getTopSellingProductResponses(int limit, LocalDateTime startDate, LocalDateTime endDate) {
+        Map<Long, DashboardResponse.TopProductResponse> productMap = new LinkedHashMap<>();
+
+        List<Order> orders;
+        if (startDate != null && endDate != null) {
+            orders = orderRepository.findByCreatedAtBetween(startDate, endDate);
+        } else {
+            orders = orderRepository.findAll();
         }
 
-        return responses;
+        for (Order order : orders) {
+            if (order.getOrderItems() == null) continue;
+            for (var item : order.getOrderItems()) {
+                Product product = item.getProduct();
+                if (product == null) continue;
+
+                Long pid = product.getId();
+                DashboardResponse.TopProductResponse existing = productMap.get(pid);
+                if (existing == null) {
+                    existing = new DashboardResponse.TopProductResponse();
+                    existing.setProductId(pid);
+                    existing.setProductName(product.getName());
+                    existing.setProductSku(product.getSku());
+                    existing.setTotalSold(0L);
+                    existing.setRevenue(BigDecimal.ZERO);
+                    try {
+                        ImageResponse primaryImage = imageService.getPrimaryImage("product", pid);
+                        if (primaryImage != null) {
+                            existing.setImageUrl(primaryImage.getImageUrl());
+                        }
+                    } catch (Exception e) {
+                        existing.setImageUrl(null);
+                    }
+                    productMap.put(pid, existing);
+                }
+
+                existing.setTotalSold(existing.getTotalSold() + item.getQuantity());
+                BigDecimal itemRevenue = item.getLineTotal() != null ? item.getLineTotal() : BigDecimal.ZERO;
+                existing.setRevenue(existing.getRevenue().add(itemRevenue));
+            }
+        }
+
+        List<DashboardResponse.TopProductResponse> sorted = new ArrayList<>(productMap.values());
+        sorted.sort((a, b) -> Long.compare(b.getTotalSold(), a.getTotalSold()));
+        return sorted.stream().limit(limit).collect(Collectors.toList());
     }
 }

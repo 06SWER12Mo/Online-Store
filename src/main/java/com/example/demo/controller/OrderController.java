@@ -243,8 +243,8 @@ public class OrderController {
     }
 
     @GetMapping("/paged")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get all orders (paged, Admin only)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Get all orders (paged, Admin/Manager)")
     public ResponseEntity<Page<OrderSummaryResponse>> getAllOrdersPaged(
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<OrderSummaryResponse> responses = orderService.getAllOrders(pageable);

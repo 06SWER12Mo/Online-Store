@@ -55,9 +55,9 @@ public class LocationMapper {
         }
     }
 
-    /** Lightweight response for list endpoints — avoids loading lazy towns */
+    /** Response with towns included */
     public BigAreaResponse toBigAreaResponse(BigArea bigArea) {
-        return new BigAreaResponse(
+        BigAreaResponse response = new BigAreaResponse(
             bigArea.getId(),
             bigArea.getName(),
             bigArea.getCode(),
@@ -67,6 +67,11 @@ public class LocationMapper {
             bigArea.getCreatedAt(),
             bigArea.getUpdatedAt()
         );
+        if (bigArea.getTowns() != null && !bigArea.getTowns().isEmpty()) {
+            response.setTowns(toTownResponseList(bigArea.getTowns()));
+            response.setTownCount(bigArea.getTowns().size());
+        }
+        return response;
     }
 
     /** Full response with towns — use only for single-entity detail views */

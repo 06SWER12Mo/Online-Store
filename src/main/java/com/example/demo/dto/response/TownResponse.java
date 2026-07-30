@@ -18,7 +18,7 @@ public class TownResponse {
     private Double latitude;
     private Double longitude;
     private java.math.BigDecimal deliveryFee;
-    private boolean deliveryAvailable;
+    private Boolean deliveryAvailable;
     private Long bigAreaId;
     private String bigAreaName;
     private Integer deliveryAddressCount;
@@ -33,7 +33,7 @@ public class TownResponse {
     public TownResponse(Long id, String name, String code, String zipCode,
                          String description, boolean active, Integer displayOrder,
                          Double latitude, Double longitude,
-                         java.math.BigDecimal deliveryFee, boolean deliveryAvailable,
+                         java.math.BigDecimal deliveryFee, Boolean deliveryAvailable,
                          Long bigAreaId, String bigAreaName,
                          LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
@@ -160,11 +160,11 @@ public class TownResponse {
         this.deliveryFee = deliveryFee;
     }
 
-    public boolean isDeliveryAvailable() {
+    public Boolean isDeliveryAvailable() {
         return deliveryAvailable;
     }
 
-    public void setDeliveryAvailable(boolean deliveryAvailable) {
+    public void setDeliveryAvailable(Boolean deliveryAvailable) {
         this.deliveryAvailable = deliveryAvailable;
     }
 
