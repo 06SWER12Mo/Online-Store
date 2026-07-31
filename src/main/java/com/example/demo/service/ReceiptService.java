@@ -22,9 +22,9 @@ public interface ReceiptService {
     
     ReceiptResponse getReceiptByNumber(String receiptNumber);
     
-    Page<ReceiptResponse> getAllReceipts(Pageable pageable);
+    Page<ReceiptResponse> getAllReceipts(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
     
-    Page<ReceiptResponse> getReceiptsBySupplier(Long supplierId, Pageable pageable);
+    Page<ReceiptResponse> getReceiptsBySupplier(Long supplierId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
     
     Page<ReceiptResponse> getReceiptsByStatus(String status, Pageable pageable);
     

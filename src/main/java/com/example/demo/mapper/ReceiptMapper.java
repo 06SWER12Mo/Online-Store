@@ -52,8 +52,8 @@ public class ReceiptMapper {
         receipt.setReceiptType(request.getReceiptType() != null ? request.getReceiptType() : "PURCHASE");
         receipt.setShippingCost(request.getShippingCost() != null ? request.getShippingCost() : java.math.BigDecimal.ZERO);
         receipt.setDiscountAmount(request.getDiscountAmount() != null ? request.getDiscountAmount() : java.math.BigDecimal.ZERO);
-        receipt.setStatus("PENDING");
-        receipt.setPaymentStatus("UNPAID");
+        receipt.setStatus("APPROVED");
+        receipt.setPaymentStatus("PAID");
         receipt.setCreatedBy(user);
 
         return receipt;

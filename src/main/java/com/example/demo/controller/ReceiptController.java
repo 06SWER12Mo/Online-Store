@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 import java.util.List;
 
 @RestController
@@ -108,9 +109,13 @@ public class ReceiptController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Receipts retrieved successfully")
     })
     public ResponseEntity<ApiResponse<Page<ReceiptResponse>>> getAllReceipts(
+            @Parameter(description = "Start of the date range (optional, ISO date-time)", example = "2026-01-01T00:00:00")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @Parameter(description = "End of the date range (optional, ISO date-time)", example = "2026-01-31T23:59:59")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @Parameter(description = "Pagination and sorting parameters")
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<ReceiptResponse> response = receiptService.getAllReceipts(pageable);
+        Page<ReceiptResponse> response = receiptService.getAllReceipts(startDate, endDate, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -123,9 +128,13 @@ public class ReceiptController {
     })
     public ResponseEntity<ApiResponse<Page<ReceiptResponse>>> getReceiptsBySupplier(
             @Parameter(description = "ID of the supplier", required = true) @PathVariable Long supplierId,
+            @Parameter(description = "Start of the date range (optional, ISO date-time)", example = "2026-01-01T00:00:00")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @Parameter(description = "End of the date range (optional, ISO date-time)", example = "2026-01-31T23:59:59")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @Parameter(description = "Pagination and sorting parameters")
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<ReceiptResponse> response = receiptService.getReceiptsBySupplier(supplierId, pageable);
+        Page<ReceiptResponse> response = receiptService.getReceiptsBySupplier(supplierId, startDate, endDate, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -78,8 +78,8 @@ public class ReceiptServiceImpl implements ReceiptService {
         Receipt receipt = new Receipt();
         receipt.setReceiptNumber(generateReceiptNumber());
         receipt.setReceiptDate(request.getReceiptDate() != null ? request.getReceiptDate() : LocalDateTime.now());
-        receipt.setStatus("PENDING");
-        receipt.setPaymentStatus("UNPAID");
+        receipt.setStatus("APPROVED");
+        receipt.setPaymentStatus("PAID");
         receipt.setReceiptType(request.getReceiptType() != null ? request.getReceiptType() : "PURCHASE");
         receipt.setShippingCost(request.getShippingCost() != null ? request.getShippingCost() : BigDecimal.ZERO);
         receipt.setDiscountAmount(request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO);
@@ -143,14 +143,38 @@ public class ReceiptServiceImpl implements ReceiptService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ReceiptResponse> getAllReceipts(Pageable pageable) {
+    public Page<ReceiptResponse> getAllReceipts(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+        if (startDate != null && endDate != null) {
+            return receiptRepository.findByReceiptDateBetween(startDate, endDate, pageable)
+                    .map(receiptMapper::toResponse);
+        }
+        if (startDate != null) {
+            return receiptRepository.findByReceiptDateGreaterThanEqual(startDate, pageable)
+                    .map(receiptMapper::toResponse);
+        }
+        if (endDate != null) {
+            return receiptRepository.findByReceiptDateLessThanEqual(endDate, pageable)
+                    .map(receiptMapper::toResponse);
+        }
         return receiptRepository.findAll(pageable)
                 .map(receiptMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ReceiptResponse> getReceiptsBySupplier(Long supplierId, Pageable pageable) {
+    public Page<ReceiptResponse> getReceiptsBySupplier(Long supplierId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+        if (startDate != null && endDate != null) {
+            return receiptRepository.findBySupplierIdAndReceiptDateBetween(supplierId, startDate, endDate, pageable)
+                    .map(receiptMapper::toResponse);
+        }
+        if (startDate != null) {
+            return receiptRepository.findBySupplierIdAndReceiptDateGreaterThanEqual(supplierId, startDate, pageable)
+                    .map(receiptMapper::toResponse);
+        }
+        if (endDate != null) {
+            return receiptRepository.findBySupplierIdAndReceiptDateLessThanEqual(supplierId, endDate, pageable)
+                    .map(receiptMapper::toResponse);
+        }
         return receiptRepository.findBySupplierId(supplierId, pageable)
                 .map(receiptMapper::toResponse);
     }
@@ -195,6 +219,7 @@ public class ReceiptServiceImpl implements ReceiptService {
                 .orElseThrow(() -> ResourceNotFoundException.userById(userId));
 
         receipt.setStatus("APPROVED");
+        receipt.setPaymentStatus("PAID");
         receipt.setApprovedBy(user);
         receipt.setApprovedAt(LocalDateTime.now());
         

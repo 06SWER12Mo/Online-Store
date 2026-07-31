@@ -34,6 +34,24 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Long> {
     @Query("SELECT r FROM Receipt r WHERE r.receiptDate BETWEEN :startDate AND :endDate")
     List<Receipt> findByReceiptDateBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
     
+    @Query("SELECT r FROM Receipt r WHERE r.receiptDate BETWEEN :startDate AND :endDate")
+    Page<Receipt> findByReceiptDateBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
+    
+    @Query("SELECT r FROM Receipt r WHERE r.supplier.id = :supplierId AND r.receiptDate BETWEEN :startDate AND :endDate")
+    Page<Receipt> findBySupplierIdAndReceiptDateBetween(@Param("supplierId") Long supplierId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
+
+    @Query("SELECT r FROM Receipt r WHERE r.receiptDate >= :startDate")
+    Page<Receipt> findByReceiptDateGreaterThanEqual(@Param("startDate") LocalDateTime startDate, Pageable pageable);
+
+    @Query("SELECT r FROM Receipt r WHERE r.receiptDate <= :endDate")
+    Page<Receipt> findByReceiptDateLessThanEqual(@Param("endDate") LocalDateTime endDate, Pageable pageable);
+
+    @Query("SELECT r FROM Receipt r WHERE r.supplier.id = :supplierId AND r.receiptDate >= :startDate")
+    Page<Receipt> findBySupplierIdAndReceiptDateGreaterThanEqual(@Param("supplierId") Long supplierId, @Param("startDate") LocalDateTime startDate, Pageable pageable);
+
+    @Query("SELECT r FROM Receipt r WHERE r.supplier.id = :supplierId AND r.receiptDate <= :endDate")
+    Page<Receipt> findBySupplierIdAndReceiptDateLessThanEqual(@Param("supplierId") Long supplierId, @Param("endDate") LocalDateTime endDate, Pageable pageable);
+    
     @Query("SELECT r FROM Receipt r WHERE r.totalAmount >= :minAmount AND r.totalAmount <= :maxAmount")
     List<Receipt> findByTotalAmountBetween(@Param("minAmount") BigDecimal minAmount, @Param("maxAmount") BigDecimal maxAmount);
     
@@ -49,6 +67,13 @@ public interface ReceiptRepository extends JpaRepository<Receipt, Long> {
     @Transactional
     @Query("UPDATE Receipt r SET r.paymentStatus = :paymentStatus WHERE r.id = :id")
     void updatePaymentStatus(@Param("id") Long id, @Param("paymentStatus") String paymentStatus);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Receipt r SET r.status = 'APPROVED', r.paymentStatus = 'PAID' " +
+           "WHERE (r.status = 'PENDING' OR r.paymentStatus IN ('UNPAID', 'PARTIAL')) " +
+           "AND r.status <> 'REJECTED' AND r.status <> 'CANCELLED'")
+    int normalizeSavedReceipts();
     
     @Query("SELECT COALESCE(SUM(r.totalAmount), 0) FROM Receipt r WHERE r.status = 'APPROVED' AND r.receiptDate BETWEEN :startDate AND :endDate")
     BigDecimal getTotalReceiptsAmountBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
